@@ -58,10 +58,7 @@ public class CreateMysqlDatabase {
             System.out.println("Could not create database");
             System.exit(-1);
         }
-
         file.write("true");
-        System.out.println("HI");
-
         file.close();
     }
 }

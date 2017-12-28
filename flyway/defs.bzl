@@ -15,14 +15,12 @@ def _create_database(ctx):
   password = datasource_connection.password
   dbname = ctx.attr.dbname
 
-  print(ctx.outputs.executable)
   outs = [ctx.outputs.executable]
-  print(dir(datasource_connection.database_creator.java))
   ctx.actions.run(
       inputs = [],
       outputs = outs,
       arguments = [host, port, username, password, dbname, ctx.outputs.executable.path],
-      executable = ctx.executable._test,
+      executable = datasource_connection.database_creator_bin,
       mnemonic = "CreateDatabase"
   )
 
@@ -31,17 +29,13 @@ def _create_database(ctx):
 
   print(creator.java)
   print(dir(creator.java))
-  return [DefaultInfo(
-      files = creator.files,
-      default_runfiles = creator.default_runfiles.merge(ctx.runfiles(outs)),
-      data_runfiles = creator.data_runfiles.merge(ctx.runfiles(outs)))]
+  return [DefaultInfo(files = depset(outs))]
 
 create_database = rule(
     implementation = _create_database,
     attrs = {
         "datasource_connection": attr.label(mandatory=True, providers=[datasource_connection_provider]),
         "dbname": attr.string(mandatory=True),
-        "_test": attr.label(executable=True, cfg="target", default=Label("@sqldatabase//create:create_mysql_database_bin"))
     },
     executable=True,
 )
@@ -58,14 +52,27 @@ driver_from_connection = rule(
     }
 )
 
+# Allows you to:
+# bazel run //..:create_<name>
+# depend on a created database via //..:create_<name>
 def database(name, datasource_connection, dbname = None):
     if dbname == None:
         dbname = name
 
+    create_name = "create_%s" % name
+    create_rule = ":%s" % create_name
     create_database(
-        name = "created_" + name,
+        name = create_name,
         datasource_connection = datasource_connection,
         dbname = dbname,
+    )
+
+    created_name = "created_%s" % name
+    native.genrule(
+        name = created_name,
+        srcs = [create_rule],
+        outs = ["success"],
+        cmd = "cat $(location %s) > $@" % create_rule
     )
 
 
