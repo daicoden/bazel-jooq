@@ -22,7 +22,7 @@ datasource_configuration = rule(
         "username": attr.string(mandatory = True),
         "password": attr.string(mandatory = True),
         "driver": attr.label(mandatory = True, providers=["java"]),
-        "database_creator": attr.label(mandatory = True, cfg="target", executable=True),
+        "database_creator": attr.label(mandatory = True, cfg="host", executable=True),
     }
 )
 
