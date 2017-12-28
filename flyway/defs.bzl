@@ -13,27 +13,37 @@ def _create_database(ctx):
   port = datasource_connection.port
   username = datasource_connection.username
   password = datasource_connection.password
-  out = ctx.actions.declare_file("success")
+  dbname = ctx.attr.dbname
 
+  print(ctx.outputs.executable)
+  outs = [ctx.outputs.executable]
+  print(dir(datasource_connection.database_creator.java))
   ctx.actions.run(
       inputs = [],
-      outputs = [out],
-      arguments = [host, port, username, password, out.path],
-      executable = datasource_connection.database_creator_bin
+      outputs = outs,
+      arguments = [host, port, username, password, dbname, ctx.outputs.executable.path],
+      executable = ctx.executable._test,
+      mnemonic = "CreateDatabase"
   )
 
   creator = datasource_connection.database_creator
+  # This ensures that whatever the creator needs to run is available and built
+
+  print(creator.java)
+  print(dir(creator.java))
   return [DefaultInfo(
       files = creator.files,
-      default_runfiles = creator.default_runfiles,
-      data_runfiles = creator.data_runfiles)]
+      default_runfiles = creator.default_runfiles.merge(ctx.runfiles(outs)),
+      data_runfiles = creator.data_runfiles.merge(ctx.runfiles(outs)))]
 
 create_database = rule(
     implementation = _create_database,
     attrs = {
         "datasource_connection": attr.label(mandatory=True, providers=[datasource_connection_provider]),
         "dbname": attr.string(mandatory=True),
+        "_test": attr.label(executable=True, cfg="target", default=Label("@sqldatabase//create:create_mysql_database_bin"))
     },
+    executable=True,
 )
 
 

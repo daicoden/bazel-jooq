@@ -26,6 +26,7 @@ public class CreateMysqlDatabase {
         String username = args[2];
         String password = args[3];
         String dbname = args[4];
+        String out = args[5];
 
         String url = String.format("jdbc:mysql://%s:%s", host, port);
         Connection conn = null;
@@ -52,12 +53,15 @@ public class CreateMysqlDatabase {
             }
         }
 
-        BufferedWriter file = Files.newBufferedWriter(Paths.get(args[4]));
+        BufferedWriter file = Files.newBufferedWriter(Paths.get(out));
         if (!success) {
             System.out.println("Could not create database");
             System.exit(-1);
         }
 
         file.write("true");
+        System.out.println("HI");
+
+        file.close();
     }
 }
