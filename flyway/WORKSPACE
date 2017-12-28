@@ -1,5 +1,0 @@
-workspace(name = "flyway")
-
-#local_repository(name = "sqldatabase", path = "../sqldatabase")
-#load("@sqldatabase//:defs.bzl", "sqldatabase_repositories")
-#sqldatabase_repositories()
