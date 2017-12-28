@@ -1,0 +1,8 @@
+local_repository(name = "sqldatabase", path = "../sqldatabase")
+load("@sqldatabase//:defs.bzl", "sqldatabase_repositories")
+sqldatabase_repositories()
+
+local_repository(name = "flyway", path = "../flyway")
+load("@flyway//:defs.bzl", "flyway_repositories")
+flyway_repositories()
+
