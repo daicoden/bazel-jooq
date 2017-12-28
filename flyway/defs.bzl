@@ -36,6 +36,7 @@ create_database = rule(
     attrs = {
         "datasource_connection": attr.label(mandatory=True, providers=[datasource_connection_provider]),
         "dbname": attr.string(mandatory=True),
+        "_test": attr.label(executable=True, cfg="target", default=Label("@sqldatabase//create:create_mysql_database_bin"))
     },
     executable=True,
 )
