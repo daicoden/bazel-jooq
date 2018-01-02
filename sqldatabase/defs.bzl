@@ -1,38 +1,57 @@
 load("@sqldatabase//:repositories.bzl", "sqldatabase_repositories")
 
 datasource_connection_provider = provider(
-    fields=["host", "port", "username", "password", "driver", "database_creator", "database_creator_bin"])
+    fields=["jdbc_connection_string", "username", "password", "driver_class"])
+
+TYPE_TO_CREATOR = {
+    "mysql": Label("@sqldatabase//create:create_mysql_database_bin")
+}
+
+# Requires a datasource_type be defiened by the rule
+# Should be executable=True
+def database_creator(datasource_type):
+  return TYPE_TO_CREATOR[datasource_type]
+
+# Creats the out file specified with the contents "SUCCESS" or errors
+def create_database(actions, executable, datasource_connection, dbname, out):
+    conn_string = datasource_connection.jdbc_connection_string
+    username = datasource_connection.username
+    password = datasource_connection.password
+    driver_class = datasource_connection.driver_class
+
+    actions.run(
+      inputs = [],
+      outputs = [out],
+      arguments = [conn_string, username, password, driver_class, dbname, out.path],
+      executable = executable,
+      mnemonic = "CreateDatabase"
+    )
 
 def _datasource_configuration(ctx):
     return [datasource_connection_provider(
-        host=ctx.attr.host,
-        port=ctx.attr.port,
+        jdbc_connection_string=ctx.attr.jdbc_connection_string,
         username=ctx.attr.username,
         password=ctx.attr.password,
-        driver=ctx.attr.driver,
-        database_creator = ctx.attr.database_creator,
-        database_creator_bin = ctx.executable.database_creator,
+        driver_class=ctx.attr.driver_class,
     )]
 
 datasource_configuration = rule(
     implementation = _datasource_configuration,
     attrs = {
-        "host": attr.string(mandatory = True),
-        "port": attr.string(mandatory = True),
+        "jdbc_connection_string": attr.string(mandatory = True),
         "username": attr.string(mandatory = True),
         "password": attr.string(mandatory = True),
-        "driver": attr.label(mandatory = True, providers=["java"]),
-        "database_creator": attr.label(mandatory = True, cfg="host", executable=True),
+        "driver_class": attr.string(mandatory = True),
     }
 )
 
+#
 def mysql_datasource_configuration(name, host, port, username, password):
     datasource_configuration(
         name=name,
-        host=host,
-        port=port,
+        jdbc_connection_string="jdbc:mysql://%s:%s" % (host, port),
         username=username,
         password=password,
-        driver="@sqldatabase//:mysql_driver",
-        database_creator = "@sqldatabase//create:create_mysql_database_bin",
+        driver_class="com.mysql.cj.jdbc.Driver",
     )
+    return {"datasource_type": "mysql", "datasource_connection": "//" + native.package_name() + ":" + name}

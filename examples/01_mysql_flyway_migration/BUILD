@@ -10,7 +10,7 @@ sh_test(
     size = "small",
 )
 
-mysql_datasource_configuration(
+datasource_configuration = mysql_datasource_configuration(
     name = "mysql",
     host="localhost",
     port="3306",
@@ -20,7 +20,7 @@ mysql_datasource_configuration(
 
 database(
     name = "mysql_flyway_migration",
-    datasource_connection = ":mysql"
+    datasource_configuration = datasource_configuration
 )
 
 test_suite(name = "suite")

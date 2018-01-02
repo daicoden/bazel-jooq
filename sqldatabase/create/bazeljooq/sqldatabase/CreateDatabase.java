@@ -1,6 +1,5 @@
 package bazeljooq.sqldatabase;
 
-import com.mysql.cj.jdbc.Driver;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,30 +9,33 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class CreateMysqlDatabase {
+public class CreateDatabase {
 
     // write true to outfile for now
-    public static void main(String[] args) throws IOException, SQLException {
+    public static void main(String[] args)
+            throws IOException, SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException {
         // Must be, host, port, username, password
         if (args.length != 6) {
-            System.out.println("Usage: <script> host port username password database out-file");
+            System.out.println("Usage: <script> jdbc-connection-string username password driver-class database out-file");
             System.exit(-1);
         }
 
-        new Driver();
-        String host = args[0];
-        String port = args[1];
-        String username = args[2];
-        String password = args[3];
+        String connectionString = args[0];
+        String username = args[1].isEmpty() ? null : args[1];
+        String password = args[2].isEmpty() ? null : args[2];
+        String driverClass = args[3];
         String dbname = args[4];
         String out = args[5];
 
-        String url = String.format("jdbc:mysql://%s:%s", host, port);
+        // new Driver()
+        // Driver must be accessable on the class path
+        CreateDatabase.class.getClassLoader().loadClass(driverClass).newInstance();
+
         Connection conn = null;
         Statement statement = null;
         boolean success = false;
         try {
-            conn = DriverManager.getConnection(url, username, password);
+            conn = DriverManager.getConnection(connectionString, username, password);
             statement = conn.createStatement();
             statement.executeUpdate(String.format("CREATE DATABASE IF NOT EXISTS %s", dbname));
             success = true;
