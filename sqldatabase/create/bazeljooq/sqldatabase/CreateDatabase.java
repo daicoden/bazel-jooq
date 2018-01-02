@@ -1,5 +1,6 @@
 package bazeljooq.sqldatabase;
 
+import com.sun.istack.internal.Nullable;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +14,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class CreateDatabase {
+    public interface DatabaseCreator {
+        void create(String connString, String dbName, @Nullable String username, @Nullable String password);
+    }
 
     // From: https://memorynotfound.com/calculate-file-checksum-java/
     public enum Hash {

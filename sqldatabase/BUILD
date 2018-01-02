@@ -7,3 +7,9 @@ java_library(
     ]
 )
 
+java_library(
+    name = "sqlite_driver",
+    exports = [
+        "@org_xerial_sqlite_jdbc//jar",
+    ]
+)

@@ -38,7 +38,7 @@ def database(name, datasource_configuration, dbname = None):
     native.genrule(
         name = created_name,
         srcs = [create_rule],
-        outs = ["success"],
+        outs = [created_name + "_out"],
         cmd = "cat $(location %s) > $@" % create_rule
     )
 

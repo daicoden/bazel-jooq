@@ -4,7 +4,8 @@ datasource_connection_provider = provider(
     fields=["jdbc_connection_string", "username", "password", "driver_class"])
 
 TYPE_TO_CREATOR = {
-    "mysql": Label("@sqldatabase//create:create_mysql_database_bin")
+    "mysql": Label("@sqldatabase//create:create_mysql_database_bin"),
+    "sqlite": Label("@sqldatabase//create:create_sqlite_database_bin"),
 }
 
 # Requires a datasource_type be defiened by the rule
@@ -55,3 +56,13 @@ def mysql_datasource_configuration(name, host, port, username, password):
         driver_class="com.mysql.cj.jdbc.Driver",
     )
     return {"datasource_type": "mysql", "datasource_connection": "//" + native.package_name() + ":" + name}
+
+def sqlite_datasource_configuration(name, file):
+    datasource_configuration(
+        name=name,
+        jdbc_connection_string="jdbc:sqlite:/%s" % (file),
+        username="",
+        password="",
+        driver_class="org.sqlite.JDBC",
+    )
+    return {"datasource_type": "sqlite", "datasource_connection": "//" + native.package_name() + ":" + name}
