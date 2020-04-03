@@ -56,7 +56,6 @@ public class CreateDatabase {
     // write true to outfile for now
     public static void main(String[] args)
             throws IOException, SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException {
-        // Must be, host, port, username, password
         if (args.length != 6) {
             System.out
                     .println("Usage: <script> jdbc-connection-string username password driver-class database out-file");
@@ -70,7 +69,6 @@ public class CreateDatabase {
         String dbname = args[4];
         String out = args[5];
 
-        // new Driver()
         // Driver must be accessable on the class path
         CreateDatabase.class.getClassLoader().loadClass(driverClass).newInstance();
 
@@ -82,6 +80,9 @@ public class CreateDatabase {
             statement = conn.createStatement();
             statement.executeUpdate(String.format("CREATE DATABASE IF NOT EXISTS %s", dbname));
             success = true;
+        } catch(RuntimeException e) {
+            System.out.println("Could not create database");
+            System.exit(-1);
         } finally {
             if (statement != null) {
                 try {
@@ -99,10 +100,6 @@ public class CreateDatabase {
         }
 
         BufferedWriter file = Files.newBufferedWriter(Paths.get(out));
-        if (!success) {
-            System.out.println("Could not create database");
-            System.exit(-1);
-        }
         String toolSha = Hash.SHA256.checksum(Files.newInputStream(
                 Paths.get(CreateDatabase.class.getProtectionDomain().getCodeSource().getLocation().getPath()),
                 StandardOpenOption.READ));

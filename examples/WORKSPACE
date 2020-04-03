@@ -9,4 +9,3 @@ sqldatabase_repositories()
 new_local_repository(name = "flyway", path = "./flyway", build_file="//flyway:BUILD")
 load("@flyway//:defs.bzl", "flyway_repositories")
 flyway_repositories()
-

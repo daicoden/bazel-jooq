@@ -20,7 +20,7 @@ _create_database = rule(
 
 # Allows you to:
 # bazel run //..:create_<name>
-# depend on a created database via //..:create_<name>
+# depend on a created database via //..:created_<name>
 def database(name, datasource_configuration, dbname = None):
     if dbname == None:
         dbname = name
@@ -45,3 +45,17 @@ def database(name, datasource_configuration, dbname = None):
 
 def migrated_database(name, datasource_conneciton):
     pass
+
+
+// to redo this...
+
+https://stackoverflow.com/questions/46853097/optional-file-dependencies-in-bazel
+// reference javac and jar tools.
+https://github.com/buchgr/bazel/commit/200819dd6c95e0574e894718b471c4dc1ca91194
+//
+https://docs.bazel.build/versions/master/skylark/lib/JavaInfo.html#transitive_source_jars
+
+# Ok new new plan
+https://docs.bazel.build/versions/master/be/java.html#java_library
+
+jooq results in a .srcjar, which is then referenced by a native java_library rule.
