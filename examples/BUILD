@@ -1,3 +1,5 @@
+exports_files(['requirements.txt'])
+
 test_suite(
     name = "tests",
     tests = [
