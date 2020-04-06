@@ -1,4 +1,4 @@
-# copypastel_rules_database
+# copypastel_rules_datasource
 
 Contains rules for connecting to a local database.
 
@@ -14,15 +14,15 @@ http_archive(
 load("@rules_python//python:repositories.bzl", "py_repositories")
 py_repositories()
 
-load("//:repositories.bzl", "copypastel_rules_database_dependencies")
-copypastel_rules_database_dependencies()
+load("//:repositories.bzl", "copypastel_rules_datasource_dependencies")
+copypastel_rules_datasource_dependencies()
 
 load("@rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 pip_repositories()
 
 pip_import(
     name = "pip",
-    requirements = "@copypastel_rules_database//:requirements.txt"
+    requirements = "@copypastel_rules_datasource//:requirements.txt"
 )
 load("@pip//:requirments.bzl", "pip_install")
 pip_install()
@@ -30,7 +30,7 @@ pip_install()
 
 ## pip dependencies
 
-copypastel_rules_database relies on a @pip dependency being present.
+copypastel_rules_datasource relies on a @pip dependency being present.
 
-You can either get this by calling the copypastel_rules_database, or by adding the
+You can either get this by calling the copypastel_rules_datasource, or by adding the
 necissary requirements to your own top level pip_import named pip.

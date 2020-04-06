@@ -17,3 +17,4 @@ class DbTool:
 
 def connect_mysql(host, port, username, password):
     return DbTool(mysql.connector.connect(host=host, port=port, user=username, passwd=password))
+

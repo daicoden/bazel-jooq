@@ -1,7 +1,7 @@
 import mysql.connector
 from pytest import fixture
 
-from copypastel_rules_database.db_tool import DbTool
+from copypastel_rules_datasource.db_tool import DbTool
 
 
 @fixture
