@@ -1,8 +1,8 @@
 load("@flyway//:repositories.bzl", "flyway_repositories")
-load("@sqldatabase//:defs.bzl", "DatabaseConnectionProvider", "database_creator", "create_database")
+load("@sqldatabase//:defs.bzl", "DataSourceConnectionProvider", "database_creator", "create_database")
 
 def _create_database_impl(ctx):
-  datasource_connection = ctx.attr.datasource_connection[DatabaseConnectionProvider]
+  datasource_connection = ctx.attr.datasource_connection[DataSourceConnectionProvider]
   create_database(ctx.actions, ctx.executable._creator,
                   datasource_connection, ctx.attr.dbname, ctx.outputs.executable)
   return [DefaultInfo(files = depset([ctx.outputs.executable]))]
@@ -10,7 +10,7 @@ def _create_database_impl(ctx):
 _create_database = rule(
     implementation = _create_database_impl,
     attrs = {
-        "datasource_connection": attr.label(mandatory=True, providers=[DatabaseConnectionProvider]),
+        "datasource_connection": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
         "datasource_type": attr.string(mandatory=True),
         "dbname": attr.string(mandatory=True),
         "_creator": attr.label(executable=True, cfg="host", default=database_creator)

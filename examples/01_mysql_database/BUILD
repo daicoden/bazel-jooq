@@ -1,29 +1,45 @@
-load("@sqldatabase//:defs.bzl", "mysql_datasource_configuration")
-load("@flyway//:defs.bzl", "database")
+load("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration", "database", "datasource_configuration_json")
 
-datasource_configuration = mysql_datasource_configuration(
+datasource_configuration(
     name = "mysql",
-    host="localhost",
-    port="3306",
-    username="root",
-    password="",
+    host = "localhost",
+    password = "",
+    port = "3306",
+    username = "root",
 )
 
 database(
-    name = "mysql_flyway_migration",
-    datasource_configuration = datasource_configuration
+    name = "01_mysql_database",
+    datasource_configuration = ":mysql",
 )
 
-load("@pip//:requirements.bzl", pip_dep="requirement")
-load("//test:defs.bzl", "py_db_test")
+load(
+    "@pip//:requirements.bzl",
+    pip_require = "requirement",
+)
+load("//test:defs.bzl", "pytest_test")
 
-py_db_test(
-    name="unit_test",
-    srcs=[glob(['unittests/*.py'])],
-    deps=[
-        pip_require(':pytest'),
-        pip_require(':mysql-connector')
+datasource_configuration_json(
+    name = "mysql_config",
+    out = "mysql_config.json",
+    database_configuration = ":mysql",
+)
+
+pytest_test(
+    name = "unit_test",
+    srcs = [
+        glob(["unittests/*.py"]),
+        ":mysql_config",
+    ],
+    deps = [
+        pip_require(":pytest"),
+        pip_require(":mysql-connector-python"),
+        # https://bugs.mysql.com/bug.php?id=98225
+        requirement("dnspython"),
     ],
 )
 
-test_suite(name = "suite")
+test_suite(
+    name = "suite",
+    tests = [":unit_test"],
+)

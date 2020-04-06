@@ -19,4 +19,3 @@ pip_import(
 load("@pip//:requirements.bzl", "pip_install")
 pip_install()
 
-local_repository()

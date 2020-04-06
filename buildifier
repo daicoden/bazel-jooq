@@ -1,0 +1,3 @@
+#!/bin/bash
+
+buildifier $(find . -type f -name BUILD -or -name \*.bzl)

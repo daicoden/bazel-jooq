@@ -1,10 +1,34 @@
-from pytest import fixture
+import json
+import os
+
 import mysql.connector
+from pytest import fixture
+
 
 @fixture
-mydb = mysql.connector.connect(
-        host="$(DB_HOST)",
-        port="$(DB_PORT)",
-        user="$(DB_USER)",
-        passwd="$(DB_PASSWORD)",
-)
+def datasource_connection(database_config):
+    return mysql.connector.connect(
+            host=database_config["host"],
+            port=database_config["port"],
+            user=database_config["username"],
+            passwd=database_config["password"],
+    )
+
+
+@fixture
+def home_dir():
+    if 'PWD' in os.environ:
+        return os.environ['PWD']
+    else:
+        return os.getcwd()
+
+
+@fixture
+def database_config(home_dir):
+    with open(home_dir + '/database.json', 'r') as f:
+        yield json.loads(f.read())
+
+
+@fixture
+def database_creator_executable(home_dir):
+    return home_dir + '/'

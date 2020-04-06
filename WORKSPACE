@@ -1,4 +1,4 @@
-local_repository(name = "copypastel_rules_database", path = "./copypastel_rules_database")
+local_repository(name = "copypastel_rules_datasource", path = "./copypastel_rules_datasource")
 
 local_repository(name="examples", path ='./examples')
 
@@ -9,8 +9,8 @@ http_archive(
     sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
 )
 
-load("@copypastel_rules_database//:repositories.bzl", "copypastel_rules_database_dependencies")
-copypastel_rules_database_dependencies()
+load("@copypastel_rules_datasource//:repositories.bzl", "copypastel_rules_datasource_dependencies")
+copypastel_rules_datasource_dependencies()
 
 load("@rules_python//python:repositories.bzl", "py_repositories")
 py_repositories()
