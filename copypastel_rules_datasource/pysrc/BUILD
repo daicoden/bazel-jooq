@@ -27,6 +27,7 @@ py_binary(
         requirement("mysql-connector-python"),
         # https://bugs.mysql.com/bug.php?id=98225
         requirement("dnspython"),
-        # requirement("click"),
+        requirement("click"),
     ],
+    main='db_tool.py',
 )

@@ -37,8 +37,6 @@ pytest_test(
         pip_require("mysql-connector-python"),
         # https://bugs.mysql.com/bug.php?id=98225
         pip_require("dnspython"),
-        # Included to be able to test the create-01_mysql_database script.
-        "@copypastel_rules_datasource//:create-01_mysql_database_bin",
     ],
 )
 

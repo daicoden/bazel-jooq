@@ -46,22 +46,57 @@ datasource_template_provider = rule(
     implementation = _datasource_template_provider_impl,
 )
 
-def create_database(name, datasource_configuration):
-    datasource_template_provider(
-        name="datasource_%s_template_provider" % name,
-            datasource_configuration=datasource_configuration,
-            substitutions = {"DBNAME": name},
-        )
+def _create_database_impl(ctx):
+    datasource_configuration = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
+    default_info = ctx.attr._create_database_bin[DefaultInfo]
 
-    native.genrule(
-        name="create-%s" % name,
-        srcs = [],
-        cmd ="echo './$(location @copypastel_rules_datasource//:create_database_bin) --host $(HOST) --port $(PORT) --username $(USERNAME) --port $(PORT) --dbname $(DBNAME)' > $@",
-        tools = ["@copypastel_rules_datasource//:create_database_bin"],
-        toolchains = [":datasource_%s_template_provider" % name],
-        executable =True,
-        outs=['create-%s.sh' % name],
+    template = ctx.actions.declare_file("%s-exe-template" % ctx.label.name)
+    outfile = ctx.actions.declare_file("%s-exe" % ctx.label.name)
+
+    ctx.actions.write(
+        output=template,
+        content=ctx.expand_location(
+            "%s --host {HOST} --port {PORT} --username {USERNAME} --port {PORT} --dbname {DBNAME}" %
+             ctx.executable._create_database_bin.short_path
+        ),
     )
+
+    ctx.actions.expand_template(
+        template=template,
+        output=outfile,
+        substitutions={
+            "{HOST}": datasource_configuration.host,
+            "{PORT}": datasource_configuration.port,
+            "{USERNAME}": datasource_configuration.username,
+            "{PASSWORD}": datasource_configuration.password,
+            "{DBNAME}": ctx.attr.dbname,
+        },
+        is_executable=True
+    )
+
+
+    return struct(
+        providers=[DefaultInfo(executable=outfile,
+                               default_runfiles=ctx.runfiles([outfile]),
+                               data_runfiles=default_info.data_runfiles.merge(ctx.runfiles([outfile])))]
+    )
+
+
+create_database = rule(
+    attrs = {
+        "datasource_configuration": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
+        "dbname": attr.string(mandatory=True),
+        # TODO: does this work as top level reference because we're in a rule and not macro
+        "_create_database_bin": attr.label(default="@copypastel_rules_datasource//:create_database_bin", executable=True, cfg="host")
+    },
+    doc = """
+    Generates an executable create-<dbname>-exe which will create the database named dbname in the provided datasource.
+
+    This can be run via bazel run //path:create-<dbname>
+    """,
+    implementation = _create_database_impl,
+    executable=True,
+)
 
 def drop_database(name ,datasource_configuration):
     pass
@@ -72,7 +107,11 @@ def database(name, datasource_configuration):
 
     Name will be the name of the database.
     """
-    create_database(name, datasource_configuration)
+    create_database(
+        name="create-%s" % name,
+        datasource_configuration=datasource_configuration,
+        dbname=name
+    )
     drop_database(name, datasource_configuration)
 
 def _datasource_configuration(ctx):

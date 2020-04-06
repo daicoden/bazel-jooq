@@ -31,4 +31,4 @@ def database_config(home_dir):
 
 @fixture
 def database_creator_executable(home_dir):
-    return home_dir + '/create-01_mysql_database.sh'
+    return home_dir + '/create-01_mysql_database-exe'
