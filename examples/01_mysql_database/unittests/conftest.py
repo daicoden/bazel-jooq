@@ -25,10 +25,10 @@ def home_dir():
 
 @fixture
 def database_config(home_dir):
-    with open(home_dir + '/database.json', 'r') as f:
+    with open(home_dir + '/mysql_config.json', 'r') as f:
         yield json.loads(f.read())
 
 
 @fixture
 def database_creator_executable(home_dir):
-    return home_dir + '/'
+    return home_dir + '/create-01_mysql_database.sh'

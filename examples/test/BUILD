@@ -1,4 +1,4 @@
-filegroup(
-    name = "unit",
-    files = "unit.py",
-)
+exports_files([
+    "requirements.txt",
+    "unit.py",
+])

@@ -1,4 +1,3 @@
-
 DataSourceConnectionProvider = provider(
     fields = {
         "host": "Host to connect to",
@@ -10,12 +9,17 @@ DataSourceConnectionProvider = provider(
 )
 
 def _datasource_template_provider_impl(ctx):
-    return platform_common.TemplateVariableInfo(ctx.substitutions.update({
-                    "$(HOST)": connection_provider["host"],
-                    "$(PORT)": connection_provider["port"],
-                    "$(USERNAME)": connection_provider["username"],
-                    "$(PASSWORD)": connection_provider["password"],
-    }))
+    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
+    vars = {}
+    vars.update(ctx.attr.substitutions)
+    vars.update({
+        "HOST": connection_provider.host,
+        "PORT": connection_provider.port,
+        "USERNAME": connection_provider.username,
+        "PASSWORD": connection_provider.password,
+        "JDBC_CONNECTION_STRING": connection_provider.jdbc_connection_string,
+    })
+    return struct(providers=[platform_common.TemplateVariableInfo(vars)])
 
 datasource_template_provider = rule(
     attrs = {
@@ -37,7 +41,7 @@ datasource_template_provider = rule(
     $(USERNAME)
     $(PORT)
 
-    and any additional substitutions provided
+    and any additional substitutions provided.
     """,
     implementation = _datasource_template_provider_impl,
 )
@@ -45,25 +49,26 @@ datasource_template_provider = rule(
 def create_database(name, datasource_configuration):
     datasource_template_provider(
         name="datasource_%s_template_provider" % name,
+            datasource_configuration=datasource_configuration,
+            substitutions = {"DBNAME": name},
+        )
 
-          datasource_configuration=datasource_configuration
-                                 )
-
-
-    genrule(
-        name="create_database_%s" % name,
-        srcs = ["@copypastel_rules_database//:create_database_bin"],
-        cmd ="echo './$< --host $(HOST) --port $(PORT) --username $(USERNAME) --port $(PORT) --dbname $(DBNAME)' > $@",
+    native.genrule(
+        name="create-%s" % name,
+        srcs = [],
+        cmd ="echo './$(location @copypastel_rules_datasource//:create_database_bin) --host $(HOST) --port $(PORT) --username $(USERNAME) --port $(PORT) --dbname $(DBNAME)' > $@",
+        tools = ["@copypastel_rules_datasource//:create_database_bin"],
         toolchains = [":datasource_%s_template_provider" % name],
-        executable =True
+        executable =True,
+        outs=['create-%s.sh' % name],
     )
 
-def drop_database():
+def drop_database(name ,datasource_configuration):
     pass
 
 def database(name, datasource_configuration):
     """
-    Defines two executable targets, :create_<name> and  :drop_<name>
+    Defines two executable targets, :create-<name> and  :drop-<name>
 
     Name will be the name of the database.
     """
@@ -71,7 +76,7 @@ def database(name, datasource_configuration):
     drop_database(name, datasource_configuration)
 
 def _datasource_configuration(ctx):
-    return struct(provider=[DataSourceConnectionProvider(
+    return struct(providers=[DataSourceConnectionProvider(
         host=ctx.attr.host,
         port=ctx.attr.port,
         username=ctx.attr.username,
@@ -91,7 +96,7 @@ datasource_configuration = rule(
 )
 
 def _expand_datasource_configuration(ctx):
-    connection_provider = ctx.attrs.datasource_configuration[DataSourceConnectionProvider]
+    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
 
     ctx.expand_template(
         template=ctx.files.template,
@@ -137,20 +142,20 @@ def datasource_configuration_json(name, datasource_configuration, out=None):
     """
     Creates a config file for code to load
     """
-    native.genrule(
-        name=name + '_template',
-        cmd='echo \'{ "host": "$(HOST)", "port": $(PORT), "username": "$(USERNAME)", "password": "$(PASSWORD)", "jdbc_connection_string": "$(JDBC_CONNECTION_STRING)"}\' > $@',
-        outs=name + '_template',
+
+    datasource_template_provider(
+        name="%s_template_provider" % name,
+        datasource_configuration=datasource_configuration
     )
 
     if out == None:
         out = name + '.json'
 
-    expand_datasource_configuration(
-        name = name,
-        template=name + '_template',
-        datasource_configuration=datasource_configuration,
-        out=(out)
+    native.genrule(
+        name=name,
+        cmd='echo \'{ "host": "$(HOST)", "port": $(PORT), "username": "$(USERNAME)", "password": "$(PASSWORD)", "jdbc_connection_string": "$(JDBC_CONNECTION_STRING)"}\' > $@',
+        toolchains=[':%s_template_provider' % name],
+        outs=[out],
     )
 
 # Something like this for allowing developers to have different configs locally.
@@ -178,7 +183,7 @@ def _yaml_config_impl(repository_ctx):
 
 yaml_config = repository_rule(
     attrs = {
-        "config_path": attr.label(manditory = True),
+        "config_path": attr.label(),
         "default_config": attr.string(
             doc = """
             If no config is at the path, then this will be the default config.

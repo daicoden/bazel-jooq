@@ -17,25 +17,28 @@ load(
     "@pip//:requirements.bzl",
     pip_require = "requirement",
 )
-load("//test:defs.bzl", "pytest_test")
+load("@copypastel_rules_test_helpers//:defs.bzl", "pytest_test")
 
 datasource_configuration_json(
     name = "mysql_config",
     out = "mysql_config.json",
-    database_configuration = ":mysql",
+    datasource_configuration = ":mysql",
 )
 
 pytest_test(
     name = "unit_test",
-    srcs = [
-        glob(["unittests/*.py"]),
-        ":mysql_config",
+    srcs = glob(["unittests/*.py"]),
+    data = [
+        "mysql_config.json",
+        ":create-01_mysql_database",
     ],
     deps = [
-        pip_require(":pytest"),
-        pip_require(":mysql-connector-python"),
+        pip_require("pytest"),
+        pip_require("mysql-connector-python"),
         # https://bugs.mysql.com/bug.php?id=98225
-        requirement("dnspython"),
+        pip_require("dnspython"),
+        # Included to be able to test the create-01_mysql_database script.
+        "@copypastel_rules_datasource//:create-01_mysql_database_bin",
     ],
 )
 

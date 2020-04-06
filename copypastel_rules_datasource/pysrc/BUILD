@@ -3,7 +3,6 @@ package(default_visibility = ["//:__subpackages__"])
 load("@pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
-
 filegroup(
     name = "srcs",
     srcs = glob(["copypastel_rules_datasource/*.py"]),

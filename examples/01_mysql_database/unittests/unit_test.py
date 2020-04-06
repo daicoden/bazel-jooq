@@ -23,6 +23,7 @@ def test_database_can_be_created(datasource_connection: MySQLConnection, databas
 
 
 def test_database_can_be_deleted():
+    pass
 
 
 
