@@ -26,8 +26,8 @@ datasource_configuration_json(
 )
 
 pytest_test(
-    name = "unit_test",
-    srcs = glob(["unittests/*.py"]),
+    name = "acceptance",
+    srcs = glob(["acceptancetests/*.py"]),
     data = [
         "mysql_config.json",
         ":create-01_mysql_database",
@@ -42,5 +42,5 @@ pytest_test(
 
 test_suite(
     name = "suite",
-    tests = [":unit_test"],
+    tests = [":acceptance"],
 )
