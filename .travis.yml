@@ -9,10 +9,7 @@ env:
 
 cache:
   directories:
-    - $TRAVIS_BUILD_DIR/bazel-bazel-jooq
-    - $TRAVIS_BUILD_DIR/bazel-bin
-    - $TRAVIS_BUILD_DIR/bazel-out
-    - $TRAVIS_BUILD_DIR/bazel-testlogs
+    - ~/.cache/bazel
 
 
     # On trusty (or later) images, the Bazel apt repository can be used.
