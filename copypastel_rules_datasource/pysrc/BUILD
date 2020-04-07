@@ -16,18 +16,21 @@ py_library(
         requirement("mysql-connector-python"),
         # https://bugs.mysql.com/bug.php?id=98225
         requirement("dnspython"),
+        requirement("click"),
     ],
 )
 
+
 py_binary(
     name = "create_database",
-    srcs = [":srcs"],
+    srcs = [":lib"],
     imports = ["."],
     legacy_create_init=False,
-    deps = [
-        requirement("mysql-connector-python"),
-        # https://bugs.mysql.com/bug.php?id=98225
-        requirement("dnspython"),
-        requirement("click"),
-    ],
+)
+
+py_binary(
+    name = "drop_database",
+    srcs = [":lib"],
+    imports = ["."],
+    legacy_create_init=False,
 )

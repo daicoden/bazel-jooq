@@ -46,9 +46,9 @@ datasource_template_provider = rule(
     implementation = _datasource_template_provider_impl,
 )
 
-def _create_database_impl(ctx):
+def _dbtool_impl(ctx):
     datasource_configuration = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
-    default_info = ctx.attr._create_database_bin[DefaultInfo]
+    default_info = ctx.attr.dbtool_bin[DefaultInfo]
 
     template = ctx.actions.declare_file("%s-exe-template" % ctx.label.name)
     outfile = ctx.actions.declare_file("%s-exe" % ctx.label.name)
@@ -57,7 +57,7 @@ def _create_database_impl(ctx):
         output=template,
         content=ctx.expand_location(
             "%s --host {HOST} --port {PORT} --username {USERNAME} --port {PORT} --dbname {DBNAME}" %
-             ctx.executable._create_database_bin.short_path
+             ctx.executable.dbtool_bin.short_path
         ),
     )
 
@@ -77,24 +77,38 @@ def _create_database_impl(ctx):
     return struct(providers=[DefaultInfo(executable=outfile, runfiles=default_info.default_runfiles)] )
 
 
-create_database = rule(
+_dbtool = rule(
     attrs = {
         "datasource_configuration": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
         "dbname": attr.string(mandatory=True),
         # TODO: does this work as top level reference because we're in a rule and not macro
-        "_create_database_bin": attr.label(default="@copypastel_rules_datasource//:create_database_bin", executable=True, cfg="host")
+        "dbtool_bin": attr.label(executable=True, cfg="host")
     },
     doc = """
     Generates an executable create-<dbname>-exe which will create the database named dbname in the provided datasource.
 
     This can be run via bazel run //path:create-<dbname>
     """,
-    implementation = _create_database_impl,
+    implementation = _dbtool_impl,
     executable=True,
 )
 
-def drop_database(name ,datasource_configuration):
-    pass
+def create_database(name, datasource_configuration, dbname):
+    _dbtool(
+        name=name,
+        datasource_configuration=datasource_configuration,
+        dbname=dbname,
+        dbtool_bin="@copypastel_rules_datasource//:create_database_bin",
+    )
+
+
+def drop_database(name ,datasource_configuration, dbname):
+    _dbtool(
+        name=name,
+        datasource_configuration=datasource_configuration,
+        dbname=dbname,
+        dbtool_bin="@copypastel_rules_datasource//:drop_database_bin",
+    )
 
 def database(name, datasource_configuration):
     """
@@ -107,7 +121,12 @@ def database(name, datasource_configuration):
         datasource_configuration=datasource_configuration,
         dbname=name
     )
-    drop_database(name, datasource_configuration)
+
+    drop_database(
+        name="drop-%s" % name,
+        datasource_configuration=datasource_configuration,
+        dbname=name
+    )
 
 def _datasource_configuration(ctx):
     return struct(providers=[DataSourceConnectionProvider(

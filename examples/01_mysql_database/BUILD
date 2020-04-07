@@ -31,6 +31,7 @@ pytest_test(
     data = [
         "mysql_config.json",
         ":create-01_mysql_database",
+        ":drop-01_mysql_database",
     ],
     deps = [
         pip_require("pytest"),
