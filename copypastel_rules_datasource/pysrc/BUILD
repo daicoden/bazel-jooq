@@ -20,17 +20,16 @@ py_library(
     ],
 )
 
-
 py_binary(
     name = "create_database",
     srcs = [":lib"],
     imports = ["."],
-    legacy_create_init=False,
+    legacy_create_init = False,
 )
 
 py_binary(
     name = "drop_database",
     srcs = [":lib"],
     imports = ["."],
-    legacy_create_init=False,
+    legacy_create_init = False,
 )
