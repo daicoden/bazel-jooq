@@ -1,0 +1,74 @@
+version: 2.1
+
+executors:
+  python-bazel:
+    docker:
+      - image: circleci/python:3.7.7
+      - image: bitnami/mariadb:10.1.26-r0
+        environment:
+          ALLOW_EMPTY_PASSWORD=yes
+
+
+
+
+jobs:
+  build_test:
+    executor: python-bazel
+    parameters:
+      working_dir:
+        type: string
+        default: '.'
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
+            - v1-<< parameters.working_dir >>-bazel-out-
+
+      - run:
+          name: Create Test Results Directory
+          command: |
+            mkdir -p ~/bazel-testlogs
+
+      - run:
+          name: DB Wait
+          command: |
+            dockerize -wait tcp://localhost:3306 -timeout 2m
+
+      - run:
+          name: Bazel Tests
+          command: |
+            cd << parameters.working_dir >>
+            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" build --local_resources=2048,2,1.0 //...
+            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" test --local_resources=2048,2,1.0 --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
+
+      - save_cache:
+          key: v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/bazel-cache/
+            - ~/bazel-testlogs
+
+      - store_test_results:
+          path: ~/bazel-testlogs
+
+      - store_artifacts:
+          path: ~/bazel-testlogs
+
+
+
+workflows:
+  workflow:
+    jobs:
+      - build_test:
+          name: << matrix.working_dir >>
+          matrix:
+            parameters:
+              working_dir:
+                - "."
+                - "./copypastel_rules_datasource"
+                - "./examples/01_mysql_database"
+                - "./examples/02_mysql_database_config_json"
+

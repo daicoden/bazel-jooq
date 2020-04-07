@@ -44,4 +44,5 @@ pytest_test(
 test_suite(
     name = "suite",
     tests = [":acceptance"],
+    visibility = ["//visibility:public"],
 )

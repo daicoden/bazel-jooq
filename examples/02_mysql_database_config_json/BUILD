@@ -30,8 +30,8 @@ pytest_test(
     data = [
         "mysql_config.json",
         ":create-02_mysql_database_config_json",
-        ":drop-02_mysql_database_config_json",
         ":create-02_mysql_database_no_config_json",
+        ":drop-02_mysql_database_config_json",
         ":drop-02_mysql_database_no_config_json",
     ],
     deps = [
@@ -45,4 +45,5 @@ pytest_test(
 test_suite(
     name = "suite",
     tests = [":acceptance"],
+    visibility = ["//visibility:public"],
 )

@@ -267,17 +267,19 @@ datasource_configuration(
 json_datasource_configuration = repository_rule(
     attrs = {
         "config_file_location": attr.label(
-            doc="""
+            doc = """
             Path relative to the repository root for a datasource config file.
 
-            """),
+            """,
+        ),
         "config_file": attr.string(
-            doc="""
+            doc = """
             Config file, maybe absent
-            """),
+            """,
+        ),
         "default_config": attr.string(
             # better way to do this?
-            default="None",
+            default = "None",
             doc = """
             If no config is at the path, then this will be the default config.
             Should look something like:
