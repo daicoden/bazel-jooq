@@ -3,8 +3,7 @@ language: python
 dist: xenial  # Ubuntu 16.04
 
 env:
-  - LC_ALL=C.UTF-8
-  - LANG=C.UTF-8
+  - LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 
 # On trusty (or later) images, the Bazel apt repository can be used.
