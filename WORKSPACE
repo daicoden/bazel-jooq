@@ -1,6 +1,7 @@
 local_repository(name = "copypastel_rules_datasource", path = "./copypastel_rules_datasource")
 
-local_repository(name="examples", path ='./examples')
+local_repository(name="E01_mysql_database", path ='./examples/01_mysql_database')
+local_repository(name="copypastel_rules_test_helpers", path ='./examples/test')
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
@@ -20,7 +21,7 @@ pip_repositories()
 
 pip_import(
     name = "pip",
-    requirements = "@examples//:requirements.txt"
+    requirements = "@copypastel_rules_test_helpers//:requirements.txt"
 )
 load("@pip//:requirements.bzl", "pip_install")
 pip_install()

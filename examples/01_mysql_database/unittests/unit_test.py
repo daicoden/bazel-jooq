@@ -1,6 +1,7 @@
-from mysql.connector import MySQLConnection
-import pytest
 import os
+
+import pytest
+from mysql.connector import MySQLConnection
 
 
 def test_database_can_be_created(datasource_connection: MySQLConnection, database_creator_executable):
@@ -21,9 +22,5 @@ def test_database_can_be_created(datasource_connection: MySQLConnection, databas
     assert ('01_mysql_database',) in databases
 
 
-
 def test_database_can_be_deleted():
     pass
-
-
-

@@ -18,7 +18,11 @@ def datasource_connection(database_config):
 @fixture
 def home_dir():
     if 'PWD' in os.environ:
-        return os.environ['PWD']
+        # Figured this out through randomly looking for a variable which described where in the
+        # build tree the test was... this makes it the same as if it was run from the example
+        # space, or from the parent directory
+        build_path = "/".join(os.environ['TEST_BINARY'].split("/")[0:-1])
+        return os.environ['PWD'] + '/' + build_path
     else:
         return os.getcwd()
 

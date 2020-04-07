@@ -21,6 +21,7 @@ py_test(
     name = "unit",
     srcs = ["unit.py"],
     imports = ["."],
+    legacy_create_init = False,
     deps = [
         ":test_lib",
         requirement("pytest"),

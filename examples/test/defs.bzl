@@ -9,6 +9,7 @@ def pytest_test(name, srcs=[], deps=[], data=[]):
     py_test(
         name=name,
         srcs=srcs + ["@copypastel_rules_test_helpers//:unit.py"],
+        legacy_create_init = False,
         deps=deps,
         data=data,
         main="@copypastel_rules_test_helpers//:unit.py"

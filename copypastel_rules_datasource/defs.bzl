@@ -74,12 +74,7 @@ def _create_database_impl(ctx):
         is_executable=True
     )
 
-
-    return struct(
-        providers=[DefaultInfo(executable=outfile,
-                               default_runfiles=ctx.runfiles([outfile]),
-                               data_runfiles=default_info.data_runfiles.merge(ctx.runfiles([outfile])))]
-    )
+    return struct(providers=[DefaultInfo(executable=outfile, runfiles=default_info.default_runfiles)] )
 
 
 create_database = rule(

@@ -23,11 +23,11 @@ py_binary(
     name = "create_database",
     srcs = [":srcs"],
     imports = ["."],
+    legacy_create_init=False,
     deps = [
         requirement("mysql-connector-python"),
         # https://bugs.mysql.com/bug.php?id=98225
         requirement("dnspython"),
         requirement("click"),
     ],
-    main='db_tool.py',
 )
