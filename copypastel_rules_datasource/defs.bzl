@@ -76,21 +76,26 @@ def _dbtool_impl(ctx):
 
     return struct(providers=[DefaultInfo(executable=outfile, runfiles=default_info.default_runfiles)] )
 
-
 _dbtool = rule(
     attrs = {
-        "datasource_configuration": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
-        "dbname": attr.string(mandatory=True),
+        "datasource_configuration": attr.label(
+            mandatory = True,
+            providers = [DataSourceConnectionProvider],
+        ),
+        "dbname": attr.string(mandatory = True),
         # TODO: does this work as top level reference because we're in a rule and not macro
-        "dbtool_bin": attr.label(executable=True, cfg="host")
+        "dbtool_bin": attr.label(
+            executable = True,
+            cfg = "host",
+        ),
     },
     doc = """
     Generates an executable create-<dbname>-exe which will create the database named dbname in the provided datasource.
 
     This can be run via bazel run //path:create-<dbname>
     """,
+    executable = True,
     implementation = _dbtool_impl,
-    executable=True,
 )
 
 def create_database(name, datasource_configuration, dbname):
@@ -100,7 +105,6 @@ def create_database(name, datasource_configuration, dbname):
         dbname=dbname,
         dbtool_bin="@copypastel_rules_datasource//:create_database_bin",
     )
-
 
 def drop_database(name ,datasource_configuration, dbname):
     _dbtool(
