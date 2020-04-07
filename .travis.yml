@@ -7,8 +7,15 @@ dist: xenial  # Ubuntu 16.04
 env:
   - LC_ALL=C.UTF-8 LANG=C.UTF-8
 
+cache:
+  directories:
+    - $TRAVIS_BUILD_DIR/bazel-bazel-jooq
+    - $TRAVIS_BUILD_DIR/bazel-bin
+    - $TRAVIS_BUILD_DIR/bazel-out
+    - $TRAVIS_BUILD_DIR/bazel-testlogs
 
-# On trusty (or later) images, the Bazel apt repository can be used.
+
+    # On trusty (or later) images, the Bazel apt repository can be used.
 addons:
   apt:
     sources:
