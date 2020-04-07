@@ -13,9 +13,9 @@ services:
   - docker
 
 before_install:
-  docker pull bitnami/mariadb:10.1.26-r0
-  docker run -dit -p 3306:3306 -e ALLOW_EMPTY_PASSWORD=yes --name mariadb bitnami/mariadb:10.1.26-r0
-  sleep 10
+  - docker pull bitnami/mariadb:10.1.26-r0
+  - docker run -dit -p 3306:3306 -e ALLOW_EMPTY_PASSWORD=yes --name mariadb bitnami/mariadb:10.1.26-r0
+  - sleep 10
 
 script:
   - ./bazelisk build //...
