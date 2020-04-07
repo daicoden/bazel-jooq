@@ -5,6 +5,11 @@ alias(
     actual = "@copypastel_rules_datasource//pysrc:create_database",
 )
 
+alias(
+    name = "drop_database_bin",
+    actual = "@copypastel_rules_datasource//pysrc:drop_database",
+)
+
 test_suite(
     name = "tests",
     tests = [

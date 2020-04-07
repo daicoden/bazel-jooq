@@ -36,3 +36,8 @@ def database_config(home_dir):
 @fixture
 def database_creator_executable(home_dir):
     return home_dir + '/create-01_mysql_database-exe'
+
+
+@fixture
+def database_dropper_executable(home_dir):
+    return home_dir + '/drop-01_mysql_database-exe'
