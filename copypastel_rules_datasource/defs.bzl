@@ -1,3 +1,5 @@
+load("@bazel_json//:json_parser.bzl", "json_parse")
+
 DataSourceConnectionProvider = provider(
     fields = {
         "host": "Host to connect to",
@@ -216,47 +218,84 @@ def datasource_configuration_json(name, datasource_configuration, out=None):
     )
 
 # Something like this for allowing developers to have different configs locally.
-def _yaml_config_impl(repository_ctx):
+def _json_config_impl(ctx):
     """
     Allows you to specify a file on disk to use for data connection.
 
     If you pass a default
     """
-    # repository_ctx.template("BUILD",
-    #                     template = """
-    #                     datasource_configuration(
-    #                         name=$(NAME)
-    #                         host=$(HOST)
-    #                         port=$(PORT)
-    #                         username=$(USERNAME)
-    #                         _OPTIONALS_
-    #                     """,
-    #                     substitutions = {
-    #                         "$(NAME)",
-    #                     }
-    #                     )
+    config_path = ctx.path(ctx.attr.config_file_location).dirname.get_child(ctx.attr.config_file)
 
-    pass
+    config = ""
+    if config_path.exists:
+        config = ctx.read(config_path)
+    elif ctx.attr.default_config == "None":
+        fail("Could not find config at %s, you must supply a default_config if this is intentional" % ctx.attr.config_file)
+    else:
+        config = ctx.attr.default_config
 
-yaml_config = repository_rule(
+    result = json_parse(config)
+
+    # currently only supports one
+    name = result.keys()[0]
+    ctx.file("BUILD.template",
+             """
+load("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration")
+
+datasource_configuration(
+    name="$(NAME)",
+    host="$(HOST)",
+    port="$(PORT)",
+    username="$(USERNAME)",
+    password="$(PASSWORD)",
+    visibility=["//visibility:public"],
+)
+             """)
+
+    ctx.template( "BUILD","BUILD.template",
+            substitutions = {
+                "$(NAME)": name,
+                "$(HOST)": result[name]["host"],
+                "$(PORT)": "%s" % result[name]["port"],
+                "$(USERNAME)": result[name]["username"],
+                "$(PASSWORD)": result[name]["password"],
+
+            },
+            executable=False,
+        )
+
+json_datasource_configuration = repository_rule(
     attrs = {
-        "config_path": attr.label(),
+        "config_file_location": attr.label(
+            doc="""
+            Path relative to the repository root for a datasource config file.
+
+            """),
+        "config_file": attr.string(
+            doc="""
+            Config file, maybe absent
+            """),
         "default_config": attr.string(
+            # better way to do this?
+            default="None",
             doc = """
             If no config is at the path, then this will be the default config.
             Should look something like:
 
-            reference_name:
-                host: <host>
-                port: <port>
-                password: <password>
-                username: <username>
-                jdbc_connection_string: <optional>
+            {
+                "datasource_name": {
+                    "host": "<host>"
+                    "port": <port>
+                    "password": "<password>"
+                    "username": "<username>"
+                    "jdbc_connection_string": "<optional>"
+                }
+            }
 
-            There can be more than datasource configured.
+            There can be more than datasource configured... maybe, eventually.
             """,
         ),
     },
     local = True,
-    implementation = _yaml_config_impl,
+    implementation = _json_config_impl,
 )
