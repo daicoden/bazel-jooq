@@ -13,10 +13,11 @@ py_library(
     srcs = [":srcs"],
     imports = ["."],
     deps = [
-        requirement("mysql-connector-python"),
+        requirement("click"),
         # https://bugs.mysql.com/bug.php?id=98225
         requirement("dnspython"),
-        requirement("click"),
+        requirement("mysql-connector-python"),
+        requirement("pyyaml")
     ],
 )
 
@@ -29,6 +30,13 @@ py_binary(
 
 py_binary(
     name = "drop_database",
+    srcs = [":lib"],
+    imports = ["."],
+    legacy_create_init = False,
+)
+
+py_binary(
+    name = "yaml_to_datasource",
     srcs = [":lib"],
     imports = ["."],
     legacy_create_init = False,
