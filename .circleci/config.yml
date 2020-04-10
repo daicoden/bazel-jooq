@@ -4,7 +4,7 @@ executors:
   python-bazel:
     docker:
       - image: circleci/python:3.7.7
-      - image: bitnami/mariadb:10.1.26-r0
+      - image: circleci/mariadb:10.4.8
         environment:
           ALLOW_EMPTY_PASSWORD=yes
 
