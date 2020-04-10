@@ -8,14 +8,21 @@ def _create_database_impl(ctx):
   return [DefaultInfo(files = depset([ctx.outputs.executable]))]
 
 _create_database = rule(
-    implementation = _create_database_impl,
     attrs = {
-        "datasource_connection": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
-        "datasource_type": attr.string(mandatory=True),
-        "dbname": attr.string(mandatory=True),
-        "_creator": attr.label(executable=True, cfg="host", default=database_creator)
+        "datasource_connection": attr.label(
+            mandatory = True,
+            providers = [DataSourceConnectionProvider],
+        ),
+        "datasource_type": attr.string(mandatory = True),
+        "dbname": attr.string(mandatory = True),
+        "_creator": attr.label(
+            executable = True,
+            cfg = "host",
+            default = database_creator,
+        ),
     },
-    executable=True,
+    executable = True,
+    implementation = _create_database_impl,
 )
 
 # Allows you to:
@@ -42,11 +49,10 @@ def database(name, datasource_configuration, dbname = None):
         cmd = "cat $(location %s) > $@" % create_rule
     )
 
-
 def migrated_database(name, datasource_conneciton):
     pass
 
-
+"""
 // to redo this...
 
 https://stackoverflow.com/questions/46853097/optional-file-dependencies-in-bazel
@@ -59,3 +65,4 @@ https://docs.bazel.build/versions/master/skylark/lib/JavaInfo.html#transitive_so
 https://docs.bazel.build/versions/master/be/java.html#java_library
 
 jooq results in a .srcjar, which is then referenced by a native java_library rule.
+"""

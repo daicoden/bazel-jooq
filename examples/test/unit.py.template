@@ -7,5 +7,5 @@ if __name__ == "__main__":
     args = [os.getenv('PWD')]
     # Coupled to .circleci/config.yml
     if os.getenv('JUNIT_XML_ROOT_DIR'):
-        args += ["--junitxml", os.path.join(os.getenv('JUNIT_XML_ROOT_DIR'), "junit.xml")]
+        args += ["--junitxml", os.path.join(os.getenv('JUNIT_XML_ROOT_DIR'), "__JUNIT_OUT__")]
     exit(pytest.main(args, plugins=['no:cacheprovider']))

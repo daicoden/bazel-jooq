@@ -17,7 +17,7 @@ py_library(
         # https://bugs.mysql.com/bug.php?id=98225
         requirement("dnspython"),
         requirement("mysql-connector-python"),
-        requirement("pyyaml")
+        requirement("pyyaml"),
     ],
 )
 
