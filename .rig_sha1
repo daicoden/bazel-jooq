@@ -1,5 +1,5 @@
 .circleci/.circleci.iml 029d9acb07662ae98d9710d462a824532efc3f02
 .idea/modules.xml c3d3be27d71a5679f8313332a5905257cb31b319
-bazel-jooq.iml e9d46839b434371e5c05d8a438141b487fff7866
+bazel-jooq.iml b1e01cc330fd4fed0206d2f49d7a591efea6ba73
 datasource/datasource.iml 029d9acb07662ae98d9710d462a824532efc3f02
 flyway/flyway.iml fc54ce010a3ba19b4d12bd0c38ad41ed2daa74fb
