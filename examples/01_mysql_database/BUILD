@@ -17,7 +17,7 @@ load(
     "@pip//:requirements.bzl",
     pip_require = "requirement",
 )
-load("@copypastel_rules_test_helpers//:defs.bzl", "pytest_test")
+load("@gpk_rules_pytest//:defs.bzl", "pytest_test")
 
 datasource_configuration_json(
     name = "mysql_config",
