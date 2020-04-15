@@ -4,6 +4,11 @@ local_repository(
 )
 
 local_repository(
+    name = "copypastel_rules_flyway",
+    path = "./copypastel_rules_flyway",
+)
+
+local_repository(
     name = "copypastel_rules_test_helpers",
     path = "./examples/test",
 )
@@ -78,3 +83,12 @@ json_datasource_configuration(
     }
     """,
 )
+
+rules_intellij_generate_sha = "f738a6306637b72a04ff80a0dfd9e70980bb08c1"
+http_archive(
+    name = "rules_intellij_generate",
+    url = "https://github.com/sconover/rules_intellij_generate/archive/%s.tar.gz" % rules_intellij_generate_sha,
+    strip_prefix = "rules_intellij_generate-%s/rules" % rules_intellij_generate_sha,
+    sha256="5fceea2c23cb9303e3eaeec5b3428a81ab4c243d8cb8e44ad971a6980f3bdaf9"
+)
+

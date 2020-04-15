@@ -9,7 +9,7 @@ filegroup(
 )
 
 py_library(
-    name = "test_lib",
+    name = "lib",
     srcs = [":srcs"],
     imports = ["."],
     deps = [
@@ -23,7 +23,7 @@ py_test(
     imports = ["."],
     legacy_create_init = False,
     deps = [
-        ":test_lib",
+        ":lib",
         requirement("pytest"),
     ],
 )

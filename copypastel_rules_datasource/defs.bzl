@@ -10,6 +10,10 @@ DataSourceConnectionProvider = provider(
     },
 )
 
+DatabaseProvider = provider(
+    fields = {"dbname": "name of the database"},
+)
+
 def _datasource_template_provider_impl(ctx):
     connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
     vars = {}
@@ -49,7 +53,8 @@ datasource_template_provider = rule(
 )
 
 def _dbtool_impl(ctx):
-    datasource_configuration = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
+    datasource_configuration = ctx.attr.database_configuration[DataSourceConnectionProvider]
+    database_configuration = ctx.attr.database_configuration[DatabaseProvider]
     default_info = ctx.attr.dbtool_bin[DefaultInfo]
 
     template = ctx.actions.declare_file("%s-exe-template" % ctx.label.name)
@@ -71,7 +76,7 @@ def _dbtool_impl(ctx):
             "{PORT}": datasource_configuration.port,
             "{USERNAME}": datasource_configuration.username,
             "{PASSWORD}": datasource_configuration.password,
-            "{DBNAME}": ctx.attr.dbname,
+            "{DBNAME}": database_configuration.dbname,
         },
         is_executable=True
     )
@@ -80,11 +85,10 @@ def _dbtool_impl(ctx):
 
 _dbtool = rule(
     attrs = {
-        "datasource_configuration": attr.label(
+        "database_configuration": attr.label(
             mandatory = True,
-            providers = [DataSourceConnectionProvider],
+            providers = [DataSourceConnectionProvider, DatabaseProvider],
         ),
-        "dbname": attr.string(mandatory = True),
         # TODO: does this work as top level reference because we're in a rule and not macro
         "dbtool_bin": attr.label(
             executable = True,
@@ -100,38 +104,57 @@ _dbtool = rule(
     implementation = _dbtool_impl,
 )
 
-def create_database(name, datasource_configuration, dbname):
+def create_database(name, database_configuration):
     _dbtool(
         name=name,
-        datasource_configuration=datasource_configuration,
-        dbname=dbname,
+        database_configuration=database_configuration,
         dbtool_bin="@copypastel_rules_datasource//:create_database_bin",
     )
 
-def drop_database(name ,datasource_configuration, dbname):
+def drop_database(name ,database_configuration):
     _dbtool(
         name=name,
-        datasource_configuration=datasource_configuration,
-        dbname=dbname,
+        database_configuration=database_configuration,
         dbtool_bin="@copypastel_rules_datasource//:drop_database_bin",
     )
 
-def database(name, datasource_configuration):
+def _database_configuration(ctx):
+    return struct(providers=[
+        ctx.attr.datasource_configuration[DataSourceConnectionProvider],
+        DatabaseProvider(dbname=ctx.attr.dbname)
+    ])
+
+database_configuration = rule(
+    attrs = {
+        "datasource_configuration": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
+        "dbname": attr.string(),
+    },
+    implementation = _database_configuration,
+)
+
+def database(name, datasource_configuration, dbname = None):
     """
     Defines two executable targets, :create-<name> and  :drop-<name>
 
     Name will be the name of the database.
     """
+
+    if dbname == None:
+        dbname = name
+
+    database_configuration(
+        name = name,
+        dbname = dbname,
+        datasource_configuration=datasource_configuration,
+    )
     create_database(
         name="create-%s" % name,
-        datasource_configuration=datasource_configuration,
-        dbname=name
+        database_configuration=":%s" % name
     )
 
     drop_database(
         name="drop-%s" % name,
-        datasource_configuration=datasource_configuration,
-        dbname=name
+        database_configuration=":%s" % name
     )
 
 def _datasource_configuration(ctx):
