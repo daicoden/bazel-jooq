@@ -1,56 +1,45 @@
-load("@flyway//:repositories.bzl", "flyway_repositories")
-load("@sqldatabase//:defs.bzl", "DataSourceConnectionProvider", "database_creator", "create_database")
+load("@copypastel_rules_datasource//:defs.bzl", "DataSourceConnectionProvider", "DatabaseProvider")
 
-def _create_database_impl(ctx):
-  datasource_connection = ctx.attr.datasource_connection[DataSourceConnectionProvider]
-  create_database(ctx.actions, ctx.executable._creator,
-                  datasource_connection, ctx.attr.dbname, ctx.outputs.executable)
-  return [DefaultInfo(files = depset([ctx.outputs.executable]))]
+def _migrate_database_executable_impl(ctx):
+    pass
 
-_create_database = rule(
+
+
+_migrate_database_executable = rule(
     attrs = {
-        "datasource_connection": attr.label(
-            mandatory = True,
-            providers = [DataSourceConnectionProvider],
-        ),
-        "datasource_type": attr.string(mandatory = True),
-        "dbname": attr.string(mandatory = True),
-        "_creator": attr.label(
-            executable = True,
-            cfg = "host",
-            default = database_creator,
-        ),
+        "database_configuration": attr.label(mandatory=True, providers=[DatabaseProvider, DataSourceConnectionProvider]),
+        "migration_files": attr.label_list(mandatory=True, allow_files=True),
     },
-    executable = True,
-    implementation = _create_database_impl,
+
+    doc = """
+    Generates an executable named migrate_<dbname>.
+
+    Running the executable will apply the migrations from the specified directory.
+    """,
+    implementation = _migrate_database_executable,
 )
 
-# Allows you to:
-# bazel run //..:create_<name>
-# depend on a created database via //..:created_<name>
-def database(name, datasource_configuration, dbname = None):
-    if dbname == None:
-        dbname = name
-
-    create_name = "create_%s" % name
-    create_rule = ":create_%s" % name
-    _create_database(
-        name = create_name,
-        datasource_connection = datasource_configuration["datasource_connection"],
-        datasource_type = datasource_configuration["datasource_type"],
-        dbname = dbname,
-    )
-
-    created_name = "created_%s" % name
-    native.genrule(
-        name = created_name,
-        srcs = [create_rule],
-        outs = ["success"],
-        cmd = "cat $(location %s) > $@" % create_rule
-    )
-
-def migrated_database(name, datasource_conneciton):
+def _migrated_database_impl():
     pass
+
+_migrated_database_impl = rule(
+
+)
+
+def migrated_database(name, database_configuration, dbname, migration_files):
+    """
+    Creates an executable target :migrate_<dbname>. Note: dbname is only syntax sugar, the database migrated will
+    be the database specified in the database_provider.
+
+    This also creates a rule which is a DatabaseProvider and a DataSourceConnectionProvider, that has a single
+    output which is the checksum of the schema_versions table. Relying on this target will ensure that
+    any rules that are dependent will get re-build when a migration is added.
+    """
+    _migrate_database_executable(
+        name = "migrate_%s" % dbname,
+        database_configuration = database_configuration,
+        migration_files = migration_files,
+    )
 
 """
 // to redo this...
