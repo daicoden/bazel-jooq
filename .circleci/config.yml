@@ -24,9 +24,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
-            - v1-<< parameters.working_dir >>-bazel-out-
+            - v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
+            - v2-<< parameters.working_dir >>-bazel-out-
 
       - run:
           name: Create Test Results Directory
@@ -46,7 +46,7 @@ jobs:
             ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" test --local_resources=2048,2,1.0 --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
 
       - save_cache:
-          key: v1-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+          key: v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
           paths:
             - ~/bazel-cache/
             - ~/bazel-testlogs
@@ -68,7 +68,6 @@ workflows:
             parameters:
               working_dir:
                 - "."
-                - "./copypastel_rules_datasource"
                 - "./examples/01_mysql_database"
                 - "./examples/02_mysql_database_config_json"
 
