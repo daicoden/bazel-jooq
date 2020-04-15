@@ -108,14 +108,14 @@ def create_database(name, database_configuration):
     _dbtool(
         name=name,
         database_configuration=database_configuration,
-        dbtool_bin="@copypastel_rules_datasource//:create_database_bin",
+        dbtool_bin="@gpk_rules_datasource//datasource:create_database_bin",
     )
 
 def drop_database(name ,database_configuration):
     _dbtool(
         name=name,
         database_configuration=database_configuration,
-        dbtool_bin="@copypastel_rules_datasource//:drop_database_bin",
+        dbtool_bin="@gpk_rules_datasource//datasource:drop_database_bin",
     )
 
 def _database_configuration(ctx):
@@ -263,7 +263,7 @@ def _json_config_impl(ctx):
     name = result.keys()[0]
     ctx.file("BUILD.template",
              """
-load("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration")
+load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration")
 
 datasource_configuration(
     name="$(NAME)",

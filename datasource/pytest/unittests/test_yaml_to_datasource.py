@@ -11,7 +11,7 @@ def test_create_build_file(database_config):
 
     assert result.exit_code == 0
     assert result.output == textwrap.dedent("""
-    load("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration")
+    load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration")
         
     datasource_configuration(
         name = "datasource_name",

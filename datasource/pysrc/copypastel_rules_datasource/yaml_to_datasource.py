@@ -9,7 +9,7 @@ import yaml
 def create_build_file(yaml_contents):
     datasources = yaml.load(yaml_contents)
 
-    build_contents = '\nload("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration")'
+    build_contents = '\nload("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration")'
 
     for datasource in datasources:
         build_contents += textwrap.dedent("""

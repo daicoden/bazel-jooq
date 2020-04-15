@@ -1,6 +1,6 @@
 exports_files(["database.json"])
 
-load("@copypastel_rules_datasource//:defs.bzl", "datasource_configuration", "database", "datasource_configuration_json")
+load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration", "database", "datasource_configuration_json")
 
 database(
     name = "02_mysql_database_config_json",

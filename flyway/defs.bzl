@@ -1,4 +1,4 @@
-load("@copypastel_rules_datasource//:defs.bzl", "DataSourceConnectionProvider", "DatabaseProvider")
+load("@gpk_rules_datasource/datasource:defs.bzl", "DataSourceConnectionProvider", "DatabaseProvider")
 
 def _migrate_database_executable_impl(ctx):
     pass

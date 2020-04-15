@@ -8,7 +8,7 @@
           <excludeFolder url="file://$MODULE_DIR$/.idea"/>
           <excludeFolder url="file://$MODULE_DIR$/bazel-bin"/>
           <excludeFolder url="file://$MODULE_DIR$/bazel-genfiles"/>
-          <excludeFolder url="file://$MODULE_DIR$/bazel-baze-jooq"/>
+          <excludeFolder url="file://$MODULE_DIR$/bazel-bazel-jooq"/>
           <excludeFolder url="file://$MODULE_DIR$/bazel-out"/>
           <excludeFolder url="file://$MODULE_DIR$/bazel-testlogs"/>
         </content>
