@@ -9,7 +9,7 @@ intellij_project(
     deps=[
         "//datasource:py_lib",
         "//datasource:py_test_lib",
-        "//flyway:java_lib",
+        # "//flyway:java_lib",
     ],
     test_lib_label_matchlist=['{"label_name":"java_test_lib"}'],
     iml_types_file="//:iml_types.xml",
