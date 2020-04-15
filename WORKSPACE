@@ -9,7 +9,7 @@ local_repository(
 )
 
 local_repository(
-    name = "copypastel_rules_test_helpers",
+    name = "gpk_rules_pytest",
     path = "./examples/test",
 )
 
@@ -45,7 +45,7 @@ pip_repositories()
 
 pip_import(
     name = "pip",
-    requirements = "@copypastel_rules_test_helpers//:requirements.txt",
+    requirements = "@gpk_rules_pytest//:requirements.txt",
 )
 
 load("@pip//:requirements.bzl", "pip_install")
