@@ -1,4 +1,8 @@
+package(default_visibility = [":__subpackages__"])
+
 load("@rules_intellij_generate//:def.bzl", "intellij_module")
+
+# Exports
 
 java_library(
     name="java_lib",
@@ -8,12 +12,5 @@ java_library(
     visibility = ["//visibility:public"]
 )
 
-java_library(
-    name="java_test_lib",
-    srcs = glob(["javatest/**/*.java"]),
-    deps=[
-    ],
-    visibility = ["//visibility:public"]
-)
 
 intellij_module(name="iml", iml_type="java", visibility = ["//visibility:public"])

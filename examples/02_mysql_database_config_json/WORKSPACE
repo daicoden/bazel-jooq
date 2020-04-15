@@ -17,18 +17,18 @@ load("@rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 pip_repositories()
 
 local_repository(
-    name = "copypastel_rules_datasource",
-    path = "../../copypastel_rules_datasource",
+    name = "gpk_rules_datasource",
+    path = "../..",
 )
 
 local_repository(
     name = "gpk_rules_pytest",
-    path = "../test",
+    path = "../../gpk_rules_pytest",
 )
 
 pip_import(
     name = "pip",
-    requirements = "@gpk_rules_pytest//:requirements.txt",
+    requirements = "@gpk_rules_datasource//:test_requirements.txt",
 )
 
 load("@pip//:requirements.bzl", "pip_install")
@@ -42,7 +42,7 @@ http_archive(
     url = "https://github.com/erickj/bazel_json/archive/e954ef2c28cd92d97304810e8999e1141e2b5cc8.zip",
 )
 
-load("@copypastel_rules_datasource//:defs.bzl", "json_datasource_configuration")
+load("@gpk_rules_datasource//datasource:defs.bzl", "json_datasource_configuration")
 
 json_datasource_configuration(
     name = "E02_datasources",
@@ -64,4 +64,12 @@ json_datasource_configuration(
         }
     }
     """,
+)
+
+rules_intellij_generate_sha = "f738a6306637b72a04ff80a0dfd9e70980bb08c1"
+http_archive(
+    name = "rules_intellij_generate",
+    url = "https://github.com/sconover/rules_intellij_generate/archive/%s.tar.gz" % rules_intellij_generate_sha,
+    strip_prefix = "rules_intellij_generate-%s/rules" % rules_intellij_generate_sha,
+    sha256="5fceea2c23cb9303e3eaeec5b3428a81ab4c243d8cb8e44ad971a6980f3bdaf9"
 )

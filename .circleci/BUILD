@@ -20,7 +20,7 @@ load(
 
 py_test(
     name = "circle_runs_examples_test",
-    srcs = ["circle_runs_examples_test.py"],
+    srcs = ["pytest/circle_runs_examples_test.py"],
     args = [
         "$(location :example_tests)",
         "$(location :config.yml)",
@@ -31,3 +31,6 @@ py_test(
     ],
     deps = [pip_require("pyyaml")],
 )
+
+load("@rules_intellij_generate//:def.bzl", "intellij_module")
+intellij_module(name="iml", iml_type="python-3.7", visibility = ["//visibility:public"])

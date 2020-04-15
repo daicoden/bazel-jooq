@@ -1,4 +1,4 @@
-package(default_visibility = ["//:__subpackages__"])
+package(default_visibility = ["//datasource:__subpackages__"])
 
 load("@pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
@@ -13,7 +13,7 @@ py_library(
     srcs = [":srcs"],
     imports = ["."],
     deps = [
-        "//pysrc:lib",
+        "//datasource/pysrc:lib",
     ],
 )
 
