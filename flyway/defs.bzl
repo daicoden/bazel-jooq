@@ -1,49 +1,53 @@
 load("@gpk_rules_datasource//datasource:defs.bzl", "DataSourceConnectionInfo", "DatabaseInfo", "create_database", "database_configuration", "drop_database")
 
-def _migrate_database_impl(ctx):
+def _flyway_tool_impl(ctx):
     datasource_configuration = ctx.attr.database_configuration[DataSourceConnectionInfo]
     database_configuration = ctx.attr.database_configuration[DatabaseInfo]
-    default_info = ctx.attr._flywaydb[DefaultInfo]
+    default_info = ctx.attr.flyway_commandline_bin[DefaultInfo]
 
     if datasource_configuration.jdbc_connector_java_lib == None:
         fail("You must specify jdbc_connector to use migrations in the datasource for %s" % ctx.label.name)
 
     jdbc_java_lib = datasource_configuration.jdbc_connector_java_lib
 
-    template = ctx.actions.declare_file("%s_exe_template" % ctx.label.name)
     outfile = ctx.actions.declare_file("%s_exe" % ctx.label.name)
 
     # Ugh, the locations HAVE to be directories, so create a depset of all the directories passed in.
     locations = depset(["filesystem:{}".format("/".join(migration.short_path.split("/")[0:-1])) for migration in ctx.files.migrations])
 
-    command_bullshit = "{FLYWAY} -url={JDBC_CONNECTION_STRING} -user={USERNAME} -password={PASSWORD} -schemas={DBNAME} -locations={LOCATIONS} -workingDirectory=`pwd`/ -jarDirs=`pwd`/{JAR_DIRS}"
+    jars = [jar.class_jar for jar in jdbc_java_lib[JavaInfo].outputs.jars]
+    # jars += [jar for jar in jdbc_java_lib[JavaInfo].runtime_output_jars]
+    jars = depset(jars)
+
     ctx.actions.write(
-        output = template,
-        content = """
-        %s migrate
-        %s info
-        """ % (command_bullshit, command_bullshit),
-    )
-
-    jar_dirs = ["/".join(jar.class_jar.short_path.split("/")[0:-1]) for jar in jdbc_java_lib[JavaInfo].outputs.jars]
-    # jar_dirs += [jar.short_path for jar in jdbc_java_lib[JavaInfo].runtime_output_jars]
-
-    ctx.actions.expand_template(
-        template = template,
         output = outfile,
-        substitutions = {
-            "{FLYWAY}": ctx.executable._flywaydb.short_path,
-            "{HOST}": datasource_configuration.host,
-            "{PORT}": datasource_configuration.port,
-            "{USERNAME}": datasource_configuration.username,
-            "{PASSWORD}": datasource_configuration.password,
-            "{DBNAME}": database_configuration.dbname,
-            "{JDBC_CONNECTION_STRING}": datasource_configuration.jdbc_connection_string,
-            "{LOCATIONS}": ",".join(locations.to_list()),
-            "{JAR_DIRS}": ",".join(jar_dirs),
-        },
+        content = """
+{FLYWAY} \
+-url={JDBC_CONNECTION_STRING} \
+-user={USERNAME} \
+-password={PASSWORD} \
+-schemas={DBNAME} \
+-locations={LOCATIONS} \
+-jarDirs=`pwd`/{JAR_DIRS} \
+-workingDirectory=`pwd`/ \
+-table={TABLE} \
+{COMMAND}
+        """.format(
+            FLYWAY = ctx.executable.flyway_commandline_bin.short_path,
+            HOST = datasource_configuration.host,
+            PORT = datasource_configuration.port,
+            USERNAME = datasource_configuration.username,
+            PASSWORD  =datasource_configuration.password,
+            DBNAME  =database_configuration.dbname,
+            JDBC_CONNECTION_STRING = datasource_configuration.jdbc_connection_string,
+            LOCATIONS = ",".join(locations.to_list()),
+            JAR_DIRS = ",".join(["/".join(jar.short_path.split("/")[0:-1]) for jar in jars.to_list()]),
+            TABLE = ctx.attr.table,
+            COMMAND = ctx.attr.command,
+        ),
         is_executable = True,
     )
+
 
     return struct(providers = [
         DefaultInfo(
@@ -55,12 +59,20 @@ def _migrate_database_impl(ctx):
         ),
     ])
 
-migrate_database = rule(
-    implementation = _migrate_database_impl,
+flyway_command = rule(
+    implementation = _flyway_tool_impl,
     attrs = {
         "database_configuration": attr.label(providers = [DataSourceConnectionInfo, DatabaseInfo]),
         "migrations": attr.label_list(allow_files = True),
-        "_flywaydb": attr.label(executable = True, cfg = "host", default = "@gpk_rules_datasource//flyway"),
+        "flyway_commandline_bin": attr.label(executable = True, cfg = "host"),
+        "command": attr.string(doc = """
+        Flyway command to run, i.e. migrate, info, clean, etc.
+
+        https://flywaydb.org/documentation/commandline/
+        """),
+        "table": attr.string(default = "flyway_schema_history", doc = """
+        Argument for flyway options
+        """),
     },
     executable = True,
 )
@@ -71,13 +83,24 @@ def _migrated_database_impl(ctx):
     ctx.actions.run_shell(
         arguments = [],
         inputs = ctx.files.migrations,
-        outputs = ctx.outputs,
+        outputs = [],
         mnemonic = "FlywayDB",
         progress_message = "Migrating {}".format(ctx.database_configuration[DatabaseInfo].dbname),
         tools = [ctx.executable.migrate_tool],
         use_default_shell_env = True,
+        command = ctx.executable.migrate_tool.path,
+    )
+
+    ctx.actions.run_shell(
+        arguments = [],
+        inputs = ctx.files.migrations,
+        outputs = [checksum],
+        mnemonic = "FlywayDB",
+        progress_message = "Info {}".format(ctx.database_configuration[DatabaseInfo].dbname),
+        tools = [ctx.executable.info_tool],
+        use_default_shell_env = True,
         command = "{flyway} > {out}".format(
-            flyway = ctx.executable._migrate_tool.path,
+            flyway = ctx.executable.info_tool.path,
             out = checksum,
         ),
     )
@@ -93,10 +116,11 @@ _migrated_database = rule(
     attrs = {
         "database_configuration": attr.label(providers = [DatabaseInfo, DataSourceConnectionInfo], mandatory = True),
         "migrate_tool": attr.label(executable = True, cfg = "host", mandatory = True),
+        "info_tool": attr.label(executable = True, cfg = "host", mandatory = True),
     },
 )
 
-def migrated_database(name, datasource_configuration, migrations, dbname = None):
+def migrated_database(name, datasource_configuration, migrations, dbname = None, flyway_commandline_bin = "@gpk_rules_datasource//flyway"):
     """
     Creates an executable target :migrate_<dbname>. Note: dbname is only syntax sugar, the database migrated will
     be the database specified in the database_provider.
@@ -104,6 +128,8 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None)
     This also creates a rule which is a DatabaseInfo and a DataSourceConnectionInfo, that has a single
     output which is the checksum of the schema_versions table. Relying on this target will ensure that
     any rules that are dependent will get re-build when a migration is added.
+
+    :param flyway_commandline_bin: Specify a java_binary to use for flyway_commandline_bin, can replace with licensed flyway migrator.
     """
 
     if dbname == None:
@@ -125,30 +151,27 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None)
         database_configuration = ":{}_configuration".format(name),
     )
 
-    migrate_database(
+    flyway_command(
         name = "migrate_{}".format(name),
         database_configuration = ":{}_configuration".format(name),
         migrations = migrations,
+        command = "migrate",
+        flyway_commandline_bin = flyway_commandline_bin,
+    )
+
+    flyway_command(
+        name = "info_{}".format(name),
+        database_configuration = ":{}_configuration".format(name),
+        migrations = migrations,
+        command = "info",
+        flyway_commandline_bin = flyway_commandline_bin,
     )
 
     _migrated_database(
         name = name,
         migrate_tool = ":migrate_{}".format(name),
+        info_tool = ":info_{}".format(name),
         database_configuration = ":{}_configuration".format(name),
     )
 
-"""
 
-// to redo this...
-
-https://stackoverflow.com/questions/46853097/optional-file-dependencies-in-bazel
-// reference javac and jar tools.
-https://github.com/buchgr/bazel/commit/200819dd6c95e0574e894718b471c4dc1ca91194
-//
-https://docs.bazel.build/versions/master/skylark/lib/JavaInfo.html#transitive_source_jars
-
-# Ok new new plan
-https://docs.bazel.build/versions/master/be/java.html#java_library
-
-jooq results in a .srcjar, which is then referenced by a native java_library rule.
-"""
