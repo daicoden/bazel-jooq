@@ -30,8 +30,8 @@ pytest_test(
     srcs = glob(["acceptancetests/*.py"]),
     data = [
         "mysql_config.json",
-        ":create-01_mysql_database",
-        ":drop-01_mysql_database",
+        ":create_01_mysql_database",
+        ":drop_01_mysql_database",
     ],
     deps = [
         pip_require("pytest"),

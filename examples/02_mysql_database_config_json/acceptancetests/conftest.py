@@ -35,19 +35,19 @@ def database_config(home_dir):
 
 @fixture
 def database_creator_config_file_executable(home_dir):
-    return home_dir + '/create-02_mysql_database_config_json-exe'
+    return home_dir + '/create_02_mysql_database_config_json_exe'
 
 
 @fixture
 def database_dropper_config_file_executable(home_dir):
-    return home_dir + '/drop-02_mysql_database_config_json-exe'
+    return home_dir + '/drop_02_mysql_database_config_json_exe'
 
 
 @fixture
 def database_creator_no_config_file_executable(home_dir):
-    return home_dir + '/create-02_mysql_database_no_config_json-exe'
+    return home_dir + '/create_02_mysql_database_no_config_json_exe'
 
 
 @fixture
 def database_dropper_no_config_file_executable(home_dir):
-    return home_dir + '/drop-02_mysql_database_no_config_json-exe'
+    return home_dir + '/drop_02_mysql_database_no_config_json_exe'

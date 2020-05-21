@@ -1,6 +1,6 @@
 load("@bazel_json//:json_parser.bzl", "json_parse")
 
-DataSourceConnectionProvider = provider(
+DataSourceConnectionInfo = provider(
     fields = {
         "host": "Host to connect to",
         "port": "Port to connect to",
@@ -10,12 +10,12 @@ DataSourceConnectionProvider = provider(
     },
 )
 
-DatabaseProvider = provider(
+DatabaseInfo = provider(
     fields = {"dbname": "name of the database"},
 )
 
 def _datasource_template_provider_impl(ctx):
-    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
+    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionInfo]
     vars = {}
     vars.update(ctx.attr.substitutions)
     vars.update({
@@ -31,7 +31,7 @@ datasource_template_provider = rule(
     attrs = {
         "datasource_configuration": attr.label(
             mandatory = True,
-            providers = [DataSourceConnectionProvider],
+            providers = [DataSourceConnectionInfo],
         ),
         "substitutions": attr.string_dict(
             allow_empty = True,
@@ -53,12 +53,12 @@ datasource_template_provider = rule(
 )
 
 def _dbtool_impl(ctx):
-    datasource_configuration = ctx.attr.database_configuration[DataSourceConnectionProvider]
-    database_configuration = ctx.attr.database_configuration[DatabaseProvider]
+    datasource_configuration = ctx.attr.database_configuration[DataSourceConnectionInfo]
+    database_configuration = ctx.attr.database_configuration[DatabaseInfo]
     default_info = ctx.attr.dbtool_bin[DefaultInfo]
 
-    template = ctx.actions.declare_file("%s-exe-template" % ctx.label.name)
-    outfile = ctx.actions.declare_file("%s-exe" % ctx.label.name)
+    template = ctx.actions.declare_file("%s_exe_template" % ctx.label.name)
+    outfile = ctx.actions.declare_file("%s_exe" % ctx.label.name)
 
     ctx.actions.write(
         output = template,
@@ -87,7 +87,7 @@ _dbtool = rule(
     attrs = {
         "database_configuration": attr.label(
             mandatory = True,
-            providers = [DataSourceConnectionProvider, DatabaseProvider],
+            providers = [DataSourceConnectionInfo, DatabaseInfo],
         ),
         # TODO: does this work as top level reference because we're in a rule and not macro
         "dbtool_bin": attr.label(
@@ -96,9 +96,9 @@ _dbtool = rule(
         ),
     },
     doc = """
-    Generates an executable create-<dbname>-exe which will create the database named dbname in the provided datasource.
+    Generates an executable create_<dbname>_exe which will create the database named dbname in the provided datasource.
 
-    This can be run via bazel run //path:create-<dbname>
+    This can be run via bazel run //path:create_<dbname>
     """,
     executable = True,
     implementation = _dbtool_impl,
@@ -120,13 +120,13 @@ def drop_database(name, database_configuration):
 
 def _database_configuration(ctx):
     return struct(providers = [
-        ctx.attr.datasource_configuration[DataSourceConnectionProvider],
-        DatabaseProvider(dbname = ctx.attr.dbname),
+        ctx.attr.datasource_configuration[DataSourceConnectionInfo],
+        DatabaseInfo(dbname = ctx.attr.dbname),
     ])
 
 database_configuration = rule(
     attrs = {
-        "datasource_configuration": attr.label(mandatory = True, providers = [DataSourceConnectionProvider]),
+        "datasource_configuration": attr.label(mandatory = True, providers = [DataSourceConnectionInfo]),
         "dbname": attr.string(),
     },
     implementation = _database_configuration,
@@ -134,7 +134,7 @@ database_configuration = rule(
 
 def database(name, datasource_configuration, dbname = None):
     """
-    Defines two executable targets, :create-<name> and  :drop-<name>
+    Defines two executable targets, :create_<name> and  :drop_<name>
 
     Name will be the name of the database.
     """
@@ -148,17 +148,17 @@ def database(name, datasource_configuration, dbname = None):
         datasource_configuration = datasource_configuration,
     )
     create_database(
-        name = "create-%s" % name,
+        name = "create_%s" % name,
         database_configuration = ":%s" % name,
     )
 
     drop_database(
-        name = "drop-%s" % name,
+        name = "drop_%s" % name,
         database_configuration = ":%s" % name,
     )
 
 def _datasource_configuration(ctx):
-    return struct(providers = [DataSourceConnectionProvider(
+    return struct(providers = [DataSourceConnectionInfo(
         host = ctx.attr.host,
         port = ctx.attr.port,
         username = ctx.attr.username,
@@ -178,7 +178,7 @@ datasource_configuration = rule(
 )
 
 def _expand_datasource_configuration(ctx):
-    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
+    connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionInfo]
 
     ctx.expand_template(
         template = ctx.files.template,
@@ -199,7 +199,7 @@ expand_datasource_configuration = rule(
         ),
         "datasource_configuration": attr.label(
             mandatory = True,
-            providers = [DataSourceConnectionProvider],
+            providers = [DataSourceConnectionInfo],
         ),
         "substitutions": attr.string_dict(
             allow_empty = True,

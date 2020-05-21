@@ -15,6 +15,11 @@ local_repository(
     path = "./examples/02_mysql_database_config_json",
 )
 
+local_repository(
+    name = "E03_mysql_flyway_migration",
+    path = "./examples/03_mysql_flyway_migration",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@gpk_rules_datasource//:repositories.bzl", "gpk_rules_datasource_dependencies")
 
@@ -73,6 +78,39 @@ json_datasource_configuration(
     }
     """,
 )
+
+### Flyway
+RULES_JVM_EXTERNAL_TAG = "3.2"
+
+RULES_JVM_EXTERNAL_SHA = "82262ff4223c5fda6fb7ff8bd63db8131b51b413d26eb49e3131037e79e324af"
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+)
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@rules_jvm_external//:specs.bzl", "maven")
+
+# to update the json file, see https://github.com/bazelbuild/rules_jvm_external#updating-maven_installjson
+maven_install(
+    name = "maven",
+    artifacts = [
+        "org.flywaydb:flyway-commandline:6.4.2"
+    ],
+     maven_install_json = "//:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+    version_conflict_policy = "pinned",
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+pinned_maven_install()
+
+### Rules Intellij Generate
 
 rules_intellij_generate_sha = "f738a6306637b72a04ff80a0dfd9e70980bb08c1"
 

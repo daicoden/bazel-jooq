@@ -1,15 +1,19 @@
-exports_files(["database.json"])
-
 load("@gpk_rules_datasource//datasource:defs.bzl", "database", "datasource_configuration", "datasource_configuration_json")
+load("@gpk_rules_datasource//flyway:defs.bzl", "migrated_database")
 
-database(
-    name = "02_mysql_database_config_json",
-    datasource_configuration = "@E02_datasources//:mysql",
+datasource_configuration(
+    name = "mysql",
+    host = "localhost",
+    password = "",
+    port = "3306",
+    username = "root",
+    jdbc_connection_string = "jdbc:mysql://localhost:3306?serverTimezone=UTC",
 )
 
-database(
-    name = "02_mysql_database_no_config_json",
-    datasource_configuration = "@E02_datasources_default//:mysql",
+migrated_database(
+    name = "03_mysql_flyway_migration",
+    datasource_configuration = ":mysql",
+    migrations = glob(["migrations/*.sql"]),
 )
 
 load(
@@ -21,18 +25,18 @@ load("@gpk_rules_pytest//:defs.bzl", "pytest_test")
 datasource_configuration_json(
     name = "mysql_config",
     out = "mysql_config.json",
-    datasource_configuration = "@E02_datasources//:mysql",
+    datasource_configuration = ":mysql",
 )
+
 
 pytest_test(
     name = "acceptance",
     srcs = glob(["acceptancetests/*.py"]),
     data = [
         "mysql_config.json",
-        ":create_02_mysql_database_config_json",
-        ":create_02_mysql_database_no_config_json",
-        ":drop_02_mysql_database_config_json",
-        ":drop_02_mysql_database_no_config_json",
+        ":create_03_mysql_flyway_migration",
+        ":drop_03_mysql_flyway_migration",
+        ":migrate-03_mysql_flyway_migration"
     ],
     deps = [
         pip_require("pytest"),

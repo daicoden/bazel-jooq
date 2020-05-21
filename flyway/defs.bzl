@@ -1,43 +1,65 @@
-load("@gpk_rules_datasource/datasource:defs.bzl", "DataSourceConnectionProvider", "DatabaseProvider")
+load("@gpk_rules_datasource//datasource:defs.bzl", "DataSourceConnectionInfo", "DatabaseInfo", "create_database", "drop_database", "database_configuration")
 
-def _migrate_database_executable_impl(ctx):
+
+def _migrate_database_impl(ctx):
     pass
 
-_migrate_database_executable = rule(
+migrate_database = rule(
+    implementation = _migrate_database_impl,
     attrs = {
-        "database_configuration": attr.label(mandatory = True, providers = [DatabaseProvider, DataSourceConnectionProvider]),
-        "migration_files": attr.label_list(mandatory = True, allow_files = True),
-    },
-    doc = """
-    Generates an executable named migrate_<dbname>.
-
-    Running the executable will apply the migrations from the specified directory.
-    """,
-    implementation = _migrate_database_executable,
+        "database_configuration": attr.label(providers = [DataSourceConnectionInfo, DatabaseInfo]),
+        "migrations": attr.label_list(allow_files=True),
+    }
 )
 
-def _migrated_database_impl():
-    pass
+def _migrated_database(ctx):
+    migration_checksum = ctx.actions.declare_file(ctx.label.name + "_migration_checksum")
 
-_migrated_database_impl = rule(
-)
 
-def migrated_database(name, database_configuration, dbname, migration_files):
+    return struct(providers = [
+        ctx.attr.database_configuration[DataSourceConnectionInfo],
+        ctx.attr.database_configuration[DatabaseInfo],
+        DefaultInfo(files = [migration_checksum])
+    ])
+
+def migrated_database(name, datasource_configuration, migrations, dbname = None):
     """
     Creates an executable target :migrate_<dbname>. Note: dbname is only syntax sugar, the database migrated will
     be the database specified in the database_provider.
 
-    This also creates a rule which is a DatabaseProvider and a DataSourceConnectionProvider, that has a single
+    This also creates a rule which is a DatabaseInfo and a DataSourceConnectionInfo, that has a single
     output which is the checksum of the schema_versions table. Relying on this target will ensure that
     any rules that are dependent will get re-build when a migration is added.
     """
-    _migrate_database_executable(
-        name = "migrate_%s" % dbname,
-        database_configuration = database_configuration,
-        migration_files = migration_files,
+
+    if dbname == None:
+        dbname = name
+
+    database_configuration(
+        name = "{}_configuration".format(name),
+        dbname = dbname,
+        datasource_configuration = datasource_configuration,
     )
 
+    create_database(
+        name = "create_{}".format(name),
+        database_configuration = ":{}_configuration".format(name),
+    )
+
+    drop_database(
+        name = "drop_{}".format(name),
+        database_configuration = ":{}_configuration".format(name),
+    )
+
+    migrate_database(
+        name = "migrate_{}".format(name),
+        database_configuration = ":{}_configuration".format(name),
+        migrations = migrations,
+    )
+
+
 """
+
 // to redo this...
 
 https://stackoverflow.com/questions/46853097/optional-file-dependencies-in-bazel
