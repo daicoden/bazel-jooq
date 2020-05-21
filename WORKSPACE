@@ -101,7 +101,7 @@ maven_install(
         "org.flywaydb:flyway-commandline:6.4.2",
         "mysql:mysql-connector-java:8.0.20",
     ],
-     maven_install_json = "//:maven_install.json",
+    maven_install_json = "//:maven_install.json",
     repositories = [
         "https://repo1.maven.org/maven2",
     ],
@@ -109,6 +109,7 @@ maven_install(
 )
 
 load("@maven//:defs.bzl", "pinned_maven_install")
+
 pinned_maven_install()
 
 ### Rules Intellij Generate

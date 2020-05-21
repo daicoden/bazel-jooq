@@ -5,7 +5,7 @@ java_binary(
     main_class = "org.flywaydb.commandline.Main",
     visibility = ["//visibility:public"],
     runtime_deps = [
-        "@maven//:org_flywaydb_flyway_commandline"
+        "@maven//:org_flywaydb_flyway_commandline",
     ],
 )
 

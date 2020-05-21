@@ -1,5 +1,4 @@
-load("@gpk_rules_datasource//datasource:defs.bzl", "DataSourceConnectionInfo", "DatabaseInfo", "create_database", "drop_database", "database_configuration")
-
+load("@gpk_rules_datasource//datasource:defs.bzl", "DataSourceConnectionInfo", "DatabaseInfo", "create_database", "database_configuration", "drop_database")
 
 def _migrate_database_impl(ctx):
     datasource_configuration = ctx.attr.database_configuration[DataSourceConnectionInfo]
@@ -40,27 +39,28 @@ def _migrate_database_impl(ctx):
             "{DBNAME}": database_configuration.dbname,
             "{JDBC_CONNECTION_STRING}": datasource_configuration.jdbc_connection_string,
             "{LOCATIONS}": ",".join(locations),
-            "{JAR_DIRS}": ",".join(jar_dirs)
+            "{JAR_DIRS}": ",".join(jar_dirs),
         },
         is_executable = True,
     )
 
     print(jdbc_java_lib[DefaultInfo].files)
     return struct(providers = [
-        DefaultInfo(executable = outfile,
-                    runfiles = ctx
-                        .runfiles(files = ctx.files.migrations, transitive_files = jdbc_java_lib[DefaultInfo].files)
-                        .merge(default_info.default_runfiles)
-                        .merge(jdbc_java_lib[DefaultInfo].default_runfiles)
-        )])
-
+        DefaultInfo(
+            executable = outfile,
+            runfiles = ctx
+                .runfiles(files = ctx.files.migrations, transitive_files = jdbc_java_lib[DefaultInfo].files)
+                .merge(default_info.default_runfiles)
+                .merge(jdbc_java_lib[DefaultInfo].default_runfiles),
+        ),
+    ])
 
 migrate_database = rule(
     implementation = _migrate_database_impl,
     attrs = {
         "database_configuration": attr.label(providers = [DataSourceConnectionInfo, DatabaseInfo]),
-        "migrations": attr.label_list(allow_files=True),
-        "_flywaydb": attr.label(executable=True, cfg="host", default = "@gpk_rules_datasource//flyway"),
+        "migrations": attr.label_list(allow_files = True),
+        "_flywaydb": attr.label(executable = True, cfg = "host", default = "@gpk_rules_datasource//flyway"),
     },
     executable = True,
 )
@@ -77,23 +77,23 @@ def _migrated_database_impl(ctx):
         tools = [ctx.executable.migrate_tool],
         use_default_shell_env = True,
         command = "{flyway} > {out}".format(
-          flyway = ctx.executable._migrate_tool.path,
-          out=checksum,
-        )
+            flyway = ctx.executable._migrate_tool.path,
+            out = checksum,
+        ),
     )
 
     return struct(providers = [
         ctx.attr.database_configuration[DataSourceConnectionInfo],
         ctx.attr.database_configuration[DatabaseInfo],
-        DefaultInfo(files = [checksum])
+        DefaultInfo(files = [checksum]),
     ])
 
 _migrated_database = rule(
     implementation = _migrated_database_impl,
     attrs = {
-        "database_configuration": attr.label(providers = [DatabaseInfo, DataSourceConnectionInfo], mandatory=True),
-        "migrate_tool": attr.label(executable = True, cfg="host", mandatory=True)
-    }
+        "database_configuration": attr.label(providers = [DatabaseInfo, DataSourceConnectionInfo], mandatory = True),
+        "migrate_tool": attr.label(executable = True, cfg = "host", mandatory = True),
+    },
 )
 
 def migrated_database(name, datasource_configuration, migrations, dbname = None):
@@ -136,7 +136,6 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None)
         migrate_tool = ":migrate_{}".format(name),
         database_configuration = ":{}_configuration".format(name),
     )
-
 
 """
 
