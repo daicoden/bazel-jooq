@@ -98,7 +98,8 @@ load("@rules_jvm_external//:specs.bzl", "maven")
 maven_install(
     name = "maven",
     artifacts = [
-        "org.flywaydb:flyway-commandline:6.4.2"
+        "org.flywaydb:flyway-commandline:6.4.2",
+        "mysql:mysql-connector-java:8.0.20",
     ],
      maven_install_json = "//:maven_install.json",
     repositories = [

@@ -7,6 +7,7 @@ DataSourceConnectionInfo = provider(
         "username": "Database Username",
         "password": "Password for the User",
         "jdbc_connection_string": "Can be used for tools which connect to a JDBC supported database. Recomended if targets are using JDBC.",
+        "jdbc_connector_java_lib": "java_library for the jdbc connector",
     },
 )
 
@@ -158,13 +159,16 @@ def database(name, datasource_configuration, dbname = None):
     )
 
 def _datasource_configuration(ctx):
-    return struct(providers = [DataSourceConnectionInfo(
+    providers = [DataSourceConnectionInfo(
         host = ctx.attr.host,
         port = ctx.attr.port,
         username = ctx.attr.username,
         password = ctx.attr.password,
         jdbc_connection_string = ctx.attr.jdbc_connection_string,
-    )])
+        jdbc_connector_java_lib = ctx.attr.jdbc_connector,
+    )]
+
+    return struct(providers = providers)
 
 datasource_configuration = rule(
     attrs = {
@@ -173,6 +177,7 @@ datasource_configuration = rule(
         "username": attr.string(mandatory = True),
         "password": attr.string(mandatory = True),
         "jdbc_connection_string": attr.string(),
+        "jdbc_connector": attr.label(providers = [JavaInfo]),
     },
     implementation = _datasource_configuration,
 )

@@ -8,6 +8,7 @@ datasource_configuration(
     port = "3306",
     username = "root",
     jdbc_connection_string = "jdbc:mysql://localhost:3306?serverTimezone=UTC",
+    jdbc_connector = "@maven//:mysql_mysql_connector_java"
 )
 
 migrated_database(
@@ -36,7 +37,7 @@ pytest_test(
         "mysql_config.json",
         ":create_03_mysql_flyway_migration",
         ":drop_03_mysql_flyway_migration",
-        ":migrate-03_mysql_flyway_migration"
+        ":migrate_03_mysql_flyway_migration"
     ],
     deps = [
         pip_require("pytest"),
