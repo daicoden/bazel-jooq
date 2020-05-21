@@ -13,7 +13,8 @@ def _migrate_database_impl(ctx):
     template = ctx.actions.declare_file("%s_exe_template" % ctx.label.name)
     outfile = ctx.actions.declare_file("%s_exe" % ctx.label.name)
 
-    locations = ["filesystem:{}".format("/".join(migration.short_path.split("/")[0:-1])) for migration in ctx.files.migrations]
+    # Ugh, the locations HAVE to be directories, so create a depset of all the directories passed in.
+    locations = depset(["filesystem:{}".format("/".join(migration.short_path.split("/")[0:-1])) for migration in ctx.files.migrations])
 
     command_bullshit = "{FLYWAY} -url={JDBC_CONNECTION_STRING} -user={USERNAME} -password={PASSWORD} -schemas={DBNAME} -locations={LOCATIONS} -workingDirectory=`pwd`/ -jarDirs=`pwd`/{JAR_DIRS}"
     ctx.actions.write(
@@ -38,13 +39,12 @@ def _migrate_database_impl(ctx):
             "{PASSWORD}": datasource_configuration.password,
             "{DBNAME}": database_configuration.dbname,
             "{JDBC_CONNECTION_STRING}": datasource_configuration.jdbc_connection_string,
-            "{LOCATIONS}": ",".join(locations),
+            "{LOCATIONS}": ",".join(locations.to_list()),
             "{JAR_DIRS}": ",".join(jar_dirs),
         },
         is_executable = True,
     )
 
-    print(jdbc_java_lib[DefaultInfo].files)
     return struct(providers = [
         DefaultInfo(
             executable = outfile,
