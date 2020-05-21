@@ -28,7 +28,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" --local_resources=4096,2,1.0
+            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m"
 
   build_test:
     executor: python-bazel
