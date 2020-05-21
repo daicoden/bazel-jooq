@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [[ -z "$CUSTOM_PYTHON" ]]; then
+    if [ ! -d python3 ]; then
+            if ! [ -x "$(command -v python3)" ]; then
+                    echo 'Error: Python3 is not installed.' >&2
+                    exit 1
+            fi
+            echo 'Creating virtualenv python3'
+            python3 -m venv python3
+    fi
+
+    source python3/bin/activate
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  ./tools/bazelisk-bin/bazelisk-darwin-amd64-1.3 $*
+  result=$?
+else
+  ./tools/bazelisk-bin/bazelisk-linux-amd64-1.3 $*
+  result=$?
+fi
+
+
+if [[ -z "$NO_PYTHON" ]]; then
+  deactivate
+fi
+
+exit $result
+

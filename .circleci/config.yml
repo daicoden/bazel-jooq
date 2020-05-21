@@ -12,6 +12,24 @@ executors:
 
 
 jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7.7
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v2-.-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v2-.-bazel-out-{{ .Branch }}-
+            - v2-.-bazel-out-
+
+      - run:
+          name: Lint
+          command: |
+            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m"
+
   build_test:
     executor: python-bazel
     parameters:
@@ -70,4 +88,4 @@ workflows:
                 - "."
                 - "./examples/01_mysql_database"
                 - "./examples/02_mysql_database_config_json"
-
+      - lint

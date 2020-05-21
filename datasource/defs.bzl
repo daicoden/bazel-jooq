@@ -25,7 +25,7 @@ def _datasource_template_provider_impl(ctx):
         "PASSWORD": connection_provider.password,
         "JDBC_CONNECTION_STRING": connection_provider.jdbc_connection_string,
     })
-    return struct(providers=[platform_common.TemplateVariableInfo(vars)])
+    return struct(providers = [platform_common.TemplateVariableInfo(vars)])
 
 datasource_template_provider = rule(
     attrs = {
@@ -61,27 +61,27 @@ def _dbtool_impl(ctx):
     outfile = ctx.actions.declare_file("%s-exe" % ctx.label.name)
 
     ctx.actions.write(
-        output=template,
-        content=ctx.expand_location(
+        output = template,
+        content = ctx.expand_location(
             "%s --host {HOST} --port {PORT} --username {USERNAME} --port {PORT} --dbname {DBNAME}" %
-             ctx.executable.dbtool_bin.short_path
+            ctx.executable.dbtool_bin.short_path,
         ),
     )
 
     ctx.actions.expand_template(
-        template=template,
-        output=outfile,
-        substitutions={
+        template = template,
+        output = outfile,
+        substitutions = {
             "{HOST}": datasource_configuration.host,
             "{PORT}": datasource_configuration.port,
             "{USERNAME}": datasource_configuration.username,
             "{PASSWORD}": datasource_configuration.password,
             "{DBNAME}": database_configuration.dbname,
         },
-        is_executable=True
+        is_executable = True,
     )
 
-    return struct(providers=[DefaultInfo(executable=outfile, runfiles=default_info.default_runfiles)] )
+    return struct(providers = [DefaultInfo(executable = outfile, runfiles = default_info.default_runfiles)])
 
 _dbtool = rule(
     attrs = {
@@ -106,27 +106,27 @@ _dbtool = rule(
 
 def create_database(name, database_configuration):
     _dbtool(
-        name=name,
-        database_configuration=database_configuration,
-        dbtool_bin="@gpk_rules_datasource//datasource:create_database_bin",
+        name = name,
+        database_configuration = database_configuration,
+        dbtool_bin = "@gpk_rules_datasource//datasource:create_database_bin",
     )
 
-def drop_database(name ,database_configuration):
+def drop_database(name, database_configuration):
     _dbtool(
-        name=name,
-        database_configuration=database_configuration,
-        dbtool_bin="@gpk_rules_datasource//datasource:drop_database_bin",
+        name = name,
+        database_configuration = database_configuration,
+        dbtool_bin = "@gpk_rules_datasource//datasource:drop_database_bin",
     )
 
 def _database_configuration(ctx):
-    return struct(providers=[
+    return struct(providers = [
         ctx.attr.datasource_configuration[DataSourceConnectionProvider],
-        DatabaseProvider(dbname=ctx.attr.dbname)
+        DatabaseProvider(dbname = ctx.attr.dbname),
     ])
 
 database_configuration = rule(
     attrs = {
-        "datasource_configuration": attr.label(mandatory=True, providers=[DataSourceConnectionProvider]),
+        "datasource_configuration": attr.label(mandatory = True, providers = [DataSourceConnectionProvider]),
         "dbname": attr.string(),
     },
     implementation = _database_configuration,
@@ -145,25 +145,25 @@ def database(name, datasource_configuration, dbname = None):
     database_configuration(
         name = name,
         dbname = dbname,
-        datasource_configuration=datasource_configuration,
+        datasource_configuration = datasource_configuration,
     )
     create_database(
-        name="create-%s" % name,
-        database_configuration=":%s" % name
+        name = "create-%s" % name,
+        database_configuration = ":%s" % name,
     )
 
     drop_database(
-        name="drop-%s" % name,
-        database_configuration=":%s" % name
+        name = "drop-%s" % name,
+        database_configuration = ":%s" % name,
     )
 
 def _datasource_configuration(ctx):
-    return struct(providers=[DataSourceConnectionProvider(
-        host=ctx.attr.host,
-        port=ctx.attr.port,
-        username=ctx.attr.username,
-        password=ctx.attr.password,
-        jdbc_connection_string=ctx.attr.jdbc_connection_string,
+    return struct(providers = [DataSourceConnectionProvider(
+        host = ctx.attr.host,
+        port = ctx.attr.port,
+        username = ctx.attr.username,
+        password = ctx.attr.password,
+        jdbc_connection_string = ctx.attr.jdbc_connection_string,
     )])
 
 datasource_configuration = rule(
@@ -181,9 +181,9 @@ def _expand_datasource_configuration(ctx):
     connection_provider = ctx.attr.datasource_configuration[DataSourceConnectionProvider]
 
     ctx.expand_template(
-        template=ctx.files.template,
-        output=ctx.outputs.out,
-        substitutions=ctx.substitutions.update({
+        template = ctx.files.template,
+        output = ctx.outputs.out,
+        substitutions = ctx.substitutions.update({
             "$(HOST)": connection_provider["host"],
             "$(PORT)": connection_provider["port"],
             "$(USERNAME)": connection_provider["username"],
@@ -220,24 +220,24 @@ expand_datasource_configuration = rule(
     implementation = _expand_datasource_configuration,
 )
 
-def datasource_configuration_json(name, datasource_configuration, out=None):
+def datasource_configuration_json(name, datasource_configuration, out = None):
     """
     Creates a config file for code to load
     """
 
     datasource_template_provider(
-        name="%s_template_provider" % name,
-        datasource_configuration=datasource_configuration
+        name = "%s_template_provider" % name,
+        datasource_configuration = datasource_configuration,
     )
 
     if out == None:
-        out = name + '.json'
+        out = name + ".json"
 
     native.genrule(
-        name=name,
-        cmd='echo \'{ "host": "$(HOST)", "port": $(PORT), "username": "$(USERNAME)", "password": "$(PASSWORD)", "jdbc_connection_string": "$(JDBC_CONNECTION_STRING)"}\' > $@',
-        toolchains=[':%s_template_provider' % name],
-        outs=[out],
+        name = name,
+        cmd = 'echo \'{ "host": "$(HOST)", "port": $(PORT), "username": "$(USERNAME)", "password": "$(PASSWORD)", "jdbc_connection_string": "$(JDBC_CONNECTION_STRING)"}\' > $@',
+        toolchains = [":%s_template_provider" % name],
+        outs = [out],
     )
 
 # Something like this for allowing developers to have different configs locally.
@@ -261,8 +261,9 @@ def _json_config_impl(ctx):
 
     # currently only supports one
     name = result.keys()[0]
-    ctx.file("BUILD.template",
-             """
+    ctx.file(
+        "BUILD.template",
+        """
 load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration")
 
 datasource_configuration(
@@ -273,19 +274,21 @@ datasource_configuration(
     password="$(PASSWORD)",
     visibility=["//visibility:public"],
 )
-             """)
+             """,
+    )
 
-    ctx.template( "BUILD","BUILD.template",
-            substitutions = {
-                "$(NAME)": name,
-                "$(HOST)": result[name]["host"],
-                "$(PORT)": "%s" % result[name]["port"],
-                "$(USERNAME)": result[name]["username"],
-                "$(PASSWORD)": result[name]["password"],
-
-            },
-            executable=False,
-        )
+    ctx.template(
+        "BUILD",
+        "BUILD.template",
+        substitutions = {
+            "$(NAME)": name,
+            "$(HOST)": result[name]["host"],
+            "$(PORT)": "%s" % result[name]["port"],
+            "$(USERNAME)": result[name]["username"],
+            "$(PASSWORD)": result[name]["password"],
+        },
+        executable = False,
+    )
 
 json_datasource_configuration = repository_rule(
     attrs = {

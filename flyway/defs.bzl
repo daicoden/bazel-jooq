@@ -3,14 +3,11 @@ load("@gpk_rules_datasource/datasource:defs.bzl", "DataSourceConnectionProvider"
 def _migrate_database_executable_impl(ctx):
     pass
 
-
-
 _migrate_database_executable = rule(
     attrs = {
-        "database_configuration": attr.label(mandatory=True, providers=[DatabaseProvider, DataSourceConnectionProvider]),
-        "migration_files": attr.label_list(mandatory=True, allow_files=True),
+        "database_configuration": attr.label(mandatory = True, providers = [DatabaseProvider, DataSourceConnectionProvider]),
+        "migration_files": attr.label_list(mandatory = True, allow_files = True),
     },
-
     doc = """
     Generates an executable named migrate_<dbname>.
 
@@ -23,7 +20,6 @@ def _migrated_database_impl():
     pass
 
 _migrated_database_impl = rule(
-
 )
 
 def migrated_database(name, database_configuration, dbname, migration_files):
