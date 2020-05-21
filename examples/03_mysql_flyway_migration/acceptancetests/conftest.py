@@ -35,9 +35,13 @@ def database_config(home_dir):
 
 @fixture
 def database_creator_executable(home_dir):
-    return home_dir + '/create_01_mysql_database_exe'
+    return home_dir + '/create_03_mysql_flyway_migration_exe'
 
 
 @fixture
 def database_dropper_executable(home_dir):
-    return home_dir + '/drop_01_mysql_database_exe'
+    return home_dir + '/drop_03_mysql_flyway_migration_exe'
+
+@fixture
+def database_migrator_executable(home_dir):
+    return home_dir + '/migrate_03_mysql_flyway_migration_exe'
