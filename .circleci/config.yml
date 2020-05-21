@@ -9,8 +9,6 @@ executors:
           ALLOW_EMPTY_PASSWORD=yes
 
 
-
-
 jobs:
   lint:
     docker:
@@ -28,7 +26,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m"
+            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
 
       - save_cache:
           key: v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
