@@ -21,14 +21,19 @@ jobs:
 
       - restore_cache:
           keys:
-            - v2-.-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v2-.-bazel-out-{{ .Branch }}-
-            - v2-.-bazel-out-
+            - v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v2-lint-bazel-out-{{ .Branch }}-
+            - v2-lint-bazel-out-
 
       - run:
           name: Lint
           command: |
             ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m"
+
+      - save_cache:
+          key: v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/bazel-cache/
 
   build_test:
     executor: python-bazel
