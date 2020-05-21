@@ -12,5 +12,8 @@ load("@rules_intellij_generate//:def.bzl", "intellij_module")
 #    visibility = ["//visibility:public"]
 #)
 
-
-intellij_module(name="iml", iml_type="java", visibility = ["//visibility:public"])
+intellij_module(
+    name = "iml",
+    iml_type = "java",
+    visibility = ["//visibility:public"],
+)

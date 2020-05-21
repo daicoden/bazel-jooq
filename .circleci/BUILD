@@ -33,4 +33,9 @@ py_test(
 )
 
 load("@rules_intellij_generate//:def.bzl", "intellij_module")
-intellij_module(name="iml", iml_type="python-3.7", visibility = ["//visibility:public"])
+
+intellij_module(
+    name = "iml",
+    iml_type = "python-3.7",
+    visibility = ["//visibility:public"],
+)

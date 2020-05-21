@@ -9,9 +9,31 @@ executors:
           ALLOW_EMPTY_PASSWORD=yes
 
 
-
-
 jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7.7
+    resource_class: small
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v2-lint-bazel-out-{{ .Branch }}-
+            - v2-lint-bazel-out-
+
+      - run:
+          name: Lint
+          command: |
+            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
+
+      - save_cache:
+          key: v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/bazel-cache/
+
   build_test:
     executor: python-bazel
     parameters:
@@ -70,4 +92,4 @@ workflows:
                 - "."
                 - "./examples/01_mysql_database"
                 - "./examples/02_mysql_database_config_json"
-
+      - lint

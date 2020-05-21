@@ -1,0 +1,1 @@
+test --show_progress_rate_limit=5 --curses=yes --color=yes --test_output=errors

@@ -11,13 +11,13 @@ alias(
 )
 
 alias(
-    name="py_lib",
+    name = "py_lib",
     actual = "@gpk_rules_datasource//datasource/pysrc:lib",
 )
 
 alias(
-    name="py_test_lib",
-    actual = "@gpk_rules_datasource//datasource/pytest:lib"
+    name = "py_test_lib",
+    actual = "@gpk_rules_datasource//datasource/pytest:lib",
 )
 
 test_suite(
@@ -28,4 +28,9 @@ test_suite(
 )
 
 load("@rules_intellij_generate//:def.bzl", "intellij_module")
-intellij_module(name="iml", iml_type="python-3.7", visibility = ["//visibility:public"])
+
+intellij_module(
+    name = "iml",
+    iml_type = "python-3.7",
+    visibility = ["//visibility:public"],
+)

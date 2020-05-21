@@ -1,4 +1,4 @@
-load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration", "database", "datasource_configuration_json")
+load("@gpk_rules_datasource//datasource:defs.bzl", "database", "datasource_configuration", "datasource_configuration_json")
 
 datasource_configuration(
     name = "mysql",
