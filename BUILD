@@ -12,7 +12,7 @@ load("@rules_intellij_generate//:def.bzl", "intellij_module", "intellij_project"
 
 intellij_project(
     name = "bazel-jooq",
-    bazelexec = "./bazelisk",
+    bazelexec = "./tools/bazel",
     iml_types_file = "//:iml_types.xml",
     modules = [
         "//.circleci:iml",
