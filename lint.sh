@@ -2,7 +2,7 @@
 
 # These lint tests need to be run manually to get access to bazel.
 
-bazel $* run //lint:buildifier
+tools/bazel $* run //lint:buildifier
 
 res=$?
 
