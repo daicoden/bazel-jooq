@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  tools/bazelisk-bin/bazelisk-darwin-amd64-1.3 $*
+else
+  tools/bazelisk-bin/bazelisk-linux-amd64-1.3 $*
+fi
