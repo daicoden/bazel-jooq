@@ -96,6 +96,14 @@ local_datasource_configuration(
     username = "root",
 )
 
+load("@gpk_rules_datasource//flyway:defs.bzl", "local_database")
+local_database(
+    name = "E04db",
+    dbname = "04_mysql_flyway_migration_workspace",
+    datasource_configuration = "@E04_mysql",
+    migrations = ["@E04_mysql_flyway_migration_workspace//:migrations"]
+)
+
 ### Flyway
 RULES_JVM_EXTERNAL_TAG = "3.2"
 

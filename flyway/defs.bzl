@@ -57,6 +57,8 @@ def _flyway_tool_impl(ctx):
                 .merge(default_info.default_runfiles)
                 .merge(jdbc_java_lib[DefaultInfo].default_runfiles),
         ),
+        database_configuration,
+        datasource_configuration
     ])
 
 flyway_command = rule(
@@ -77,50 +79,72 @@ flyway_command = rule(
     executable = True,
 )
 
-def _migrated_database_impl(ctx):
-    checksum = ctx.actions.declare_file("{}_migration_checksum".format(ctx.label.name))
-
+def _checksum_database(ctx):
     ctx.actions.run_shell(
         arguments = [],
-        inputs = ctx.files.migrations,
-        outputs = [],
+        inputs = [],
+        outputs = [ctx.outputs.out],
         mnemonic = "FlywayDB",
-        progress_message = "Migrating {}".format(ctx.database_configuration[DatabaseInfo].dbname),
-        tools = [ctx.executable.migrate_tool],
-        use_default_shell_env = True,
-        command = ctx.executable.migrate_tool.path,
-    )
-
-    ctx.actions.run_shell(
-        arguments = [],
-        inputs = ctx.files.migrations,
-        outputs = [checksum],
-        mnemonic = "FlywayDB",
-        progress_message = "Info {}".format(ctx.database_configuration[DatabaseInfo].dbname),
+        progress_message = "Info {}".format(ctx.attr.info_tool[DatabaseInfo].dbname),
         tools = [ctx.executable.info_tool],
         use_default_shell_env = True,
         command = "{flyway} > {out}".format(
-            flyway = ctx.executable.info_tool.path,
-            out = checksum,
+            flyway = ctx.executable.info_tool.short_path,
+            out = ctx.outputs.out.path,
+        ),
+    )
+
+    return struct(providers = [DefaultInfo(files = depset([ctx.outputs.out]))])
+
+checksum_database = rule(
+        implementation = _checksum_database,
+        attrs = {
+            "info_tool": attr.label(executable = True, cfg = "host", mandatory = True),
+            "out": attr.output(mandatory = True),
+        },
+)
+
+def _migrated_database_impl(ctx):
+    out_checksum = ctx.actions.declare_file("{}_migration_checksum".format(ctx.label.name))
+    inputs = []
+    if ctx.attr.checksum != None:
+        inputs = [ctx.file.checksum]
+
+
+    ctx.actions.run_shell(
+        arguments = [],
+        inputs = inputs,
+        outputs = [out_checksum],
+        mnemonic = "FlywayDB",
+        progress_message = "Info {}".format(ctx.attr.info_tool[DatabaseInfo].dbname),
+        tools = [ctx.executable.info_tool, ctx.executable.migrate_tool],
+        use_default_shell_env = True,
+        command = "{migrate} && {info} > {out}".format(
+            migrate = ctx.executable.migrate_tool.short_path,
+            info = ctx.executable.info_tool.short_path,
+            out = out_checksum.path,
         ),
     )
 
     return struct(providers = [
-        ctx.attr.database_configuration[DataSourceConnectionInfo],
-        ctx.attr.database_configuration[DatabaseInfo],
-        DefaultInfo(files = [checksum]),
+        ctx.attr.migrate_tool[DataSourceConnectionInfo],
+        ctx.attr.migrate_tool[DatabaseInfo],
+        DefaultInfo(files = depset([out_checksum]), runfiles = ctx.runfiles(files = [out_checksum])),
     ])
 
 _migrated_database = rule(
     implementation = _migrated_database_impl,
     attrs = {
-        "database_configuration": attr.label(providers = [DatabaseInfo, DataSourceConnectionInfo], mandatory = True),
-        "migrate_tool": attr.label(executable = True, cfg = "host", mandatory = True),
-        "info_tool": attr.label(executable = True, cfg = "host", mandatory = True),
+        "migrate_tool": attr.label(executable = True, cfg = "host", mandatory = True, providers = [DatabaseInfo, DataSourceConnectionInfo]),
+        "info_tool": attr.label(executable = True, cfg = "host", mandatory = True, providers = [DatabaseInfo, DataSourceConnectionInfo]),
+        "checksum": attr.label(allow_single_file = True, default=None, doc = """
+        Checksum value of database to trigger a rebuild. Helpful if someone might manually run migrations
+        outside of bazel.
+        """),
     },
 )
 
-def migrated_database(name, datasource_configuration, migrations, dbname = None, flyway_commandline_bin = "@gpk_rules_datasource//flyway"):
+def migrated_database(name, datasource_configuration, migrations, dbname = None, flyway_commandline_bin = "@gpk_rules_datasource//flyway", **kwargs):
     """
     Creates an executable target :migrate_<dbname>. Note: dbname is only syntax sugar, the database migrated will
     be the database specified in the database_provider.
@@ -167,11 +191,18 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
         flyway_commandline_bin = flyway_commandline_bin,
     )
 
+    checksum_database(
+        name = "checksum_{}".format(name),
+        info_tool = ":info_{}".format(name),
+        out = "checksum_{}.sha".format(name)
+    )
+
     _migrated_database(
         name = name,
         migrate_tool = ":migrate_{}".format(name),
         info_tool = ":info_{}".format(name),
-        database_configuration = ":{}_configuration".format(name),
+        checksum = ":checksum_{}".format(name),
+        **kwargs,
     )
 
 # Users can rely on @<name>//:checksum for migrated status
@@ -179,15 +210,51 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
 # Users can run @<name>//:create
 # Users can run @<name>//:drop
 # Users can run @<name>//:migrate
-#
+# Users can build @<name>//:checksum
 def _local_database(ctx):
-    pass
+    dbname = ctx.attr.dbname
+    if dbname == None:
+        dbname = ctx.name
+
+    migrations = ",\n".join(["@{}//{}:{}".format(label.workspace_name, label.package, label.name) for label in ctx.attr.migrations])
+
+    ctx.file(
+        "BUILD",
+        """
+load("@gpk_rules_datasource//flyway:defs.bzl", "migrated_database")
+
+migrated_database(
+    name="{NAME}",
+    dbname="{DBNAME}",
+    datasource_configuration="{DATASOURCE_CONFIGURATION}",
+    migrations=[{MIGRATIONS}],
+    visibility=["//visibility:public"],
+)
+
+alias(name = "create", actual=":create_{NAME}", visibility=["//visibility:public"])
+alias(name = "drop", actual=":drop_{NAME}", visibility=["//visibility:public"])
+alias(name = "migrate", actual=":migrate_{NAME}", visibility=["//visibility:public"])
+alias(name = "checksum", actual=":checksum_{NAME}", visibility=["//visibility:public"])
+
+        """.format(
+            NAME = ctx.name,
+            DBNAME = dbname,
+            USERNAME = ctx.attr.datasource_configuration,
+            MIGRATIONS = "",
+            DATASOURCE_CONFIGURATION = ctx.attr.datasource_configuration,
+         ),
+
+        executable = False,
+    )
 
 local_database = repository_rule(
     implementation = _local_database,
     local = True,
     attrs = {
         "datasource_configuration": attr.label(providers = [DataSourceConnectionInfo]),
-        "dbname":  attr.string(),
+        "dbname":  attr.string(doc = """
+        If omitted, will be the name of the repository.
+        """),
+        "migrations": attr.label_list(allow_files = True),
     },
 )

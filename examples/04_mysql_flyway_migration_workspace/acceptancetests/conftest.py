@@ -1,7 +1,6 @@
 import json
-import os
-
 import mysql.connector
+import os
 from pytest import fixture
 
 
@@ -32,6 +31,7 @@ def database_config_raw(home_dir):
     with open(home_dir + '/mysql_config.json', 'r') as f:
         yield f.read()
 
+
 @fixture
 def database_config(database_config_raw):
     return json.loads(database_config_raw)
@@ -39,13 +39,25 @@ def database_config(database_config_raw):
 
 @fixture
 def database_creator_executable(home_dir):
-    return home_dir + '/create_03_mysql_flyway_migration_exe'
+    return home_dir + '/E04db/create'
 
 
 @fixture
 def database_dropper_executable(home_dir):
-    return home_dir + '/drop_03_mysql_flyway_migration_exe'
+    return home_dir + '/E04db/drop'
+
 
 @fixture
 def database_migrator_executable(home_dir):
-    return home_dir + '/migrate_03_mysql_flyway_migration_exe'
+    return home_dir + '/E04db/migrate'
+
+
+@fixture
+def database_checksum_executable(home_dir):
+    return home_dir + '/E04db/checksum'
+
+
+@fixture
+def database_checksum_from_build(home_dir):
+    return home_dir + '/E04db_migration_checksum'
+

@@ -18,10 +18,12 @@ pytest_test(
     srcs = glob(["acceptancetests/*.py"]),
     data = [
         "mysql_config.json",
-        #"@E04db//:create",
-        #"@E04db//:drop",
-        #"@E04db//:migrate",
-        #"@E04db//:checksum",
+        "@E04db//:create",
+        "@E04db//:drop",
+        "@E04db//:migrate",
+        "@E04db//:checksum",
+        # Causes database to be migrated on start
+        # "@E04db",
     ],
     deps = [
         pip_require("pytest"),
@@ -30,6 +32,8 @@ pytest_test(
         pip_require("dnspython"),
     ],
 )
+
+filegroup(name = "migrations", srcs = glob(["migrations/*.sql"]), visibility = ["//visibility:public"])
 
 test_suite(
     name = "suite",
