@@ -20,6 +20,11 @@ local_repository(
     path = "./examples/03_mysql_flyway_migration",
 )
 
+local_repository(
+    name = "E04_mysql_flyway_migration_workspace",
+    path = "./examples/04_mysql_flyway_migration_workspace",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@gpk_rules_datasource//:repositories.bzl", "gpk_rules_datasource_dependencies")
 
@@ -77,6 +82,18 @@ json_datasource_configuration(
         }
     }
     """,
+)
+
+### 04 example tests workspace rules
+load("@gpk_rules_datasource//datasource:defs.bzl", "local_datasource_configuration")
+local_datasource_configuration(
+    name = "E04_mysql",
+    host = "localhost",
+    jdbc_connection_string = "jdbc:mysql://localhost:3306?serverTimezone=UTC",
+    jdbc_connector = "@maven//:mysql_mysql_connector_java",
+    password = "",
+    port = "3306",
+    username = "root",
 )
 
 ### Flyway

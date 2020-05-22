@@ -93,4 +93,5 @@ workflows:
                 - "./examples/01_mysql_database"
                 - "./examples/02_mysql_database_config_json"
                 - "./examples/03_mysql_flyway_migration"
+                - "./examples/04_mysql_flyway_migration_workspace"
       - lint

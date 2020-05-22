@@ -332,3 +332,50 @@ json_datasource_configuration = repository_rule(
     local = True,
     implementation = _json_config_impl,
 )
+
+def _local_datasource_configuration(ctx):
+    ctx.file(
+        "BUILD",
+        """
+load("@gpk_rules_datasource//datasource:defs.bzl", "datasource_configuration")
+
+datasource_configuration(
+    name="{NAME}",
+    host="{HOST}",
+    port="{PORT}",
+    username="{USERNAME}",
+    password="{PASSWORD}",
+    {JDBC_CONNECTION_STRING_ARG}
+    {JDBC_CONNECTOR_ARG}
+    visibility=["//visibility:public"],
+)
+        """.format(
+            NAME = ctx.name,
+            HOST = ctx.attr.host,
+            PORT = ctx.attr.port,
+            USERNAME = ctx.attr.username,
+            PASSWORD = ctx.attr.password,
+            JDBC_CONNECTION_STRING_ARG = 'jdbc_connection_string = "{}",'.format(ctx.attr.jdbc_connection_string) if ctx.attr.jdbc_connection_string else "",
+            JDBC_CONNECTOR_ARG = 'jdbc_connector = "{}",'.format(ctx.attr.jdbc_connector) if ctx.attr.jdbc_connector else "",
+         ),
+
+        executable = False,
+    )
+
+local_datasource_configuration = repository_rule(
+    doc = """
+    Repository rule to create datasource information.
+
+    Allows datasource to be referenced by @<name>//:<name> (bazel should allow just referencing @<name> TODO test
+    """,
+    attrs = {
+        "host": attr.string(mandatory = True),
+        "port": attr.string(mandatory = True),
+        "username": attr.string(mandatory = True),
+        "password": attr.string(mandatory = True),
+        "jdbc_connection_string": attr.string(),
+        "jdbc_connector": attr.label(providers = [JavaInfo]),
+    },
+    implementation = _local_datasource_configuration,
+    local = True,
+)

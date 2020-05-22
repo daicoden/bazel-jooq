@@ -174,4 +174,20 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
         database_configuration = ":{}_configuration".format(name),
     )
 
+# Users can rely on @<name>//:checksum for migrated status
+#
+# Users can run @<name>//:create
+# Users can run @<name>//:drop
+# Users can run @<name>//:migrate
+#
+def _local_database(ctx):
+    pass
 
+local_database = repository_rule(
+    implementation = _local_database,
+    local = True,
+    attrs = {
+        "datasource_configuration": attr.label(providers = [DataSourceConnectionInfo]),
+        "dbname":  attr.string(),
+    },
+)
