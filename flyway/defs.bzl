@@ -23,9 +23,27 @@ def _flyway_tool_impl(ctx):
     # https://docs.bazel.build/versions/master/skylark/rules.html
     # https://github.com/bazelbuild/examples/blob/7357eb42c2b87a283effbfff6024b442feb5704b/rules/runfiles/complex_tool.bzl
     command = """
+echo ${{RUNFILES_DIR}}
+
 if [[ -z "${{RUNFILES_DIR}}" ]]; then
-  RUNFILES_DIR=${{0}}.runfiles
+  RUNFILES_DIR=${{0}}.runfiles/{WORKSPACE}
+else
+  RUNFILES_DIR=${{RUNFILES_DIR}}/{WORKSPACE}
 fi
+
+locs={LOCATIONS}
+runfile_locs=""
+for i in ${{locs//,/ }}
+do
+    if [[ -z "${{runfile_locs}}" ]]; then
+        runfile_locs="${{RUNFILES_DIR}}/$i"
+    else
+        runfile_locs="${{runfile_locs}},${{RUNFILES_DIR}}/$i"
+    fi
+done
+
+runfile_locs="${{runfile_locs:1}}"
+
 
 ${{RUNFILES_DIR}}/{FLYWAY} \
 -url={JDBC_CONNECTION_STRING} \
@@ -48,6 +66,7 @@ ${{RUNFILES_DIR}}/{FLYWAY} \
         JAR_DIRS = ",".join(["/".join(jar.short_path.split("/")[0:-1]) for jar in jars.to_list()]),
         TABLE = ctx.attr.table,
         COMMAND = ctx.attr.command,
+        WORKSPACE = ctx.workspace_name,
     )
 
     ctx.actions.write(
@@ -139,18 +158,16 @@ def _migrated_database_impl(ctx):
         command = """#!/bin/bash
 
 set -ex
-export RUNFILES_DIR=`pwd`/{migrate_path}.runfiles/{workspace}
-${{RUNFILES_DIR}}/{migrate}
+export RUNFILES_DIR=`pwd`/{migrate_path}.runfiles
+${{RUNFILES_DIR}}/{workspace}/{migrate}
 echo "hello" > {out}""".format(
-    migrate_path = ctx.executable.migrate_tool.path,
+            migrate_path = ctx.executable.migrate_tool.path,
             migrate = migrate_relative_tool_path,
             info = info_relative_tool_path,
             out = out_checksum.path,
             workspace = ctx.workspace_name,
         ),
     )
-
-
 
     return struct(providers = [
         ctx.attr.migrate_tool[DataSourceConnectionInfo],
@@ -227,7 +244,6 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
         name = name,
         migrate_tool = ":migrate_{}".format(name),
         info_tool = ":info_{}".format(name),
-        checksum = ":checksum_{}".format(name),
         **kwargs
     )
 
@@ -242,18 +258,36 @@ def _local_database(ctx):
     if dbname == None:
         dbname = ctx.name
 
-    migrations = ",\n".join(["@{}//{}:{}".format(label.workspace_name, label.package, label.name) for label in ctx.attr.migrations])
+    migrations = ",\n".join(["'@{}//{}:{}'".format(label.workspace_name, label.package, label.name) for label in ctx.attr.migrations])
+
+    # Total mysql hack for now... not sure what to do... need java tool which dumps content of a table
+    result = ctx.execute(["mysql", "-u", "root", "--protocol", "tcp", "-e", "select * from 04_mysql_flyway_migration_workspace.flyway_schema_history"])
+
+    ctx.file(
+        "local_checksum",
+        """
+             {RETURN_CODE}
+             {STDERR}
+             {STDOUT}
+             """.format(
+            RETURN_CODE = result.return_code,
+            STDERR = result.stderr,
+            STDOUT = result.stdout,
+        ),
+    )
 
     ctx.file(
         "BUILD",
         """
 load("@gpk_rules_datasource//flyway:defs.bzl", "migrated_database")
+exports_files(["local_checksum"])
 
 migrated_database(
     name="{NAME}",
     dbname="{DBNAME}",
     datasource_configuration="{DATASOURCE_CONFIGURATION}",
     migrations=[{MIGRATIONS}],
+    checksum = "local_checksum",
     visibility=["//visibility:public"],
 )
 
@@ -266,7 +300,7 @@ alias(name = "checksum", actual=":checksum_{NAME}", visibility=["//visibility:pu
             NAME = ctx.name,
             DBNAME = dbname,
             USERNAME = ctx.attr.datasource_configuration,
-            MIGRATIONS = "",
+            MIGRATIONS = migrations,
             DATASOURCE_CONFIGURATION = ctx.attr.datasource_configuration,
         ),
         executable = False,
@@ -275,6 +309,7 @@ alias(name = "checksum", actual=":checksum_{NAME}", visibility=["//visibility:pu
 local_database = repository_rule(
     implementation = _local_database,
     local = True,
+    configure=True,
     attrs = {
         "datasource_configuration": attr.label(providers = [DataSourceConnectionInfo]),
         "dbname": attr.string(doc = """
