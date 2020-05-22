@@ -86,6 +86,7 @@ json_datasource_configuration(
 
 ### 04 example tests workspace rules
 load("@gpk_rules_datasource//datasource:defs.bzl", "local_datasource_configuration")
+
 local_datasource_configuration(
     name = "E04_mysql",
     host = "localhost",
@@ -97,11 +98,12 @@ local_datasource_configuration(
 )
 
 load("@gpk_rules_datasource//flyway:defs.bzl", "local_database")
+
 local_database(
     name = "E04db",
-    dbname = "04_mysql_flyway_migration_workspace",
     datasource_configuration = "@E04_mysql",
-    migrations = ["@E04_mysql_flyway_migration_workspace//:migrations"]
+    dbname = "04_mysql_flyway_migration_workspace",
+    migrations = ["@E04_mysql_flyway_migration_workspace//:migrations"],
 )
 
 ### Flyway

@@ -1,6 +1,4 @@
 load("@gpk_rules_datasource//datasource:defs.bzl", "database", "datasource_configuration", "datasource_configuration_json")
-
-
 load(
     "@pip//:requirements.bzl",
     pip_require = "requirement",
@@ -23,7 +21,7 @@ pytest_test(
         "@E04db//:migrate",
         "@E04db//:checksum",
         # Causes database to be migrated on start
-        # "@E04db",
+        "@E04db",
     ],
     deps = [
         pip_require("pytest"),
@@ -33,7 +31,11 @@ pytest_test(
     ],
 )
 
-filegroup(name = "migrations", srcs = glob(["migrations/*.sql"]), visibility = ["//visibility:public"])
+filegroup(
+    name = "migrations",
+    srcs = glob(["migrations/*.sql"]),
+    visibility = ["//visibility:public"],
+)
 
 test_suite(
     name = "suite",

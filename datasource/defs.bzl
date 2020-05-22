@@ -357,8 +357,7 @@ datasource_configuration(
             PASSWORD = ctx.attr.password,
             JDBC_CONNECTION_STRING_ARG = 'jdbc_connection_string = "{}",'.format(ctx.attr.jdbc_connection_string) if ctx.attr.jdbc_connection_string else "",
             JDBC_CONNECTOR_ARG = 'jdbc_connector = "{}",'.format(ctx.attr.jdbc_connector) if ctx.attr.jdbc_connector else "",
-         ),
-
+        ),
         executable = False,
     )
 

@@ -16,38 +16,45 @@ def _flyway_tool_impl(ctx):
     locations = depset(["filesystem:{}".format("/".join(migration.short_path.split("/")[0:-1])) for migration in ctx.files.migrations])
 
     jars = [jar.class_jar for jar in jdbc_java_lib[JavaInfo].outputs.jars]
+
     # jars += [jar for jar in jdbc_java_lib[JavaInfo].runtime_output_jars]
     jars = depset(jars)
 
-    ctx.actions.write(
-        output = outfile,
-        content = """
-{FLYWAY} \
+    # https://docs.bazel.build/versions/master/skylark/rules.html
+    # https://github.com/bazelbuild/examples/blob/7357eb42c2b87a283effbfff6024b442feb5704b/rules/runfiles/complex_tool.bzl
+    command = """
+if [[ -z "${{RUNFILES_DIR}}" ]]; then
+  RUNFILES_DIR=${{0}}.runfiles
+fi
+
+${{RUNFILES_DIR}}/{FLYWAY} \
 -url={JDBC_CONNECTION_STRING} \
 -user={USERNAME} \
 -password={PASSWORD} \
 -schemas={DBNAME} \
 -locations={LOCATIONS} \
--jarDirs=`pwd`/{JAR_DIRS} \
--workingDirectory=`pwd`/ \
+-jarDirs=${{RUNFILES_DIR}}/{JAR_DIRS} \
+-workingDirectory=${{RUNFILES_DIR}}/ \
 -table={TABLE} \
-{COMMAND}
-        """.format(
-            FLYWAY = ctx.executable.flyway_commandline_bin.short_path,
-            HOST = datasource_configuration.host,
-            PORT = datasource_configuration.port,
-            USERNAME = datasource_configuration.username,
-            PASSWORD  =datasource_configuration.password,
-            DBNAME  =database_configuration.dbname,
-            JDBC_CONNECTION_STRING = datasource_configuration.jdbc_connection_string,
-            LOCATIONS = ",".join(locations.to_list()),
-            JAR_DIRS = ",".join(["/".join(jar.short_path.split("/")[0:-1]) for jar in jars.to_list()]),
-            TABLE = ctx.attr.table,
-            COMMAND = ctx.attr.command,
-        ),
-        is_executable = True,
+{COMMAND}""".format(
+        FLYWAY = ctx.executable.flyway_commandline_bin.short_path,
+        HOST = datasource_configuration.host,
+        PORT = datasource_configuration.port,
+        USERNAME = datasource_configuration.username,
+        PASSWORD = datasource_configuration.password,
+        DBNAME = database_configuration.dbname,
+        JDBC_CONNECTION_STRING = datasource_configuration.jdbc_connection_string,
+        LOCATIONS = ",".join(locations.to_list()),
+        JAR_DIRS = ",".join(["/".join(jar.short_path.split("/")[0:-1]) for jar in jars.to_list()]),
+        TABLE = ctx.attr.table,
+        COMMAND = ctx.attr.command,
     )
 
+    ctx.actions.write(
+        output = outfile,
+        content = command,
+        is_executable = True,
+    )
 
     return struct(providers = [
         DefaultInfo(
@@ -58,7 +65,7 @@ def _flyway_tool_impl(ctx):
                 .merge(jdbc_java_lib[DefaultInfo].default_runfiles),
         ),
         database_configuration,
-        datasource_configuration
+        datasource_configuration,
     ])
 
 flyway_command = rule(
@@ -80,28 +87,32 @@ flyway_command = rule(
 )
 
 def _checksum_database(ctx):
-    ctx.actions.run_shell(
-        arguments = [],
-        inputs = [],
-        outputs = [ctx.outputs.out],
-        mnemonic = "FlywayDB",
-        progress_message = "Info {}".format(ctx.attr.info_tool[DatabaseInfo].dbname),
-        tools = [ctx.executable.info_tool],
-        use_default_shell_env = True,
-        command = "{flyway} > {out}".format(
-            flyway = ctx.executable.info_tool.short_path,
-            out = ctx.outputs.out.path,
-        ),
+    ctx.actions.write(
+        ctx.outputs.out,
+        content = "hello",
     )
+    #ctx.actions.run_shell(
+    #    arguments = [],
+    #    inputs = [],
+    #    outputs = [ctx.outputs.out],
+    #    mnemonic = "FlywayDB",
+    #    progress_message = "Info {}".format(ctx.attr.info_tool[DatabaseInfo].dbname),
+    #    tools = [ctx.executable.info_tool],
+    #    use_default_shell_env = True,
+    #    command = "{flyway} > {out}".format(
+    #        flyway = ctx.executable.info_tool.short_path,
+    #        out = ctx.outputs.out.path,
+    #    ),
+    #)
 
     return struct(providers = [DefaultInfo(files = depset([ctx.outputs.out]))])
 
 checksum_database = rule(
-        implementation = _checksum_database,
-        attrs = {
-            "info_tool": attr.label(executable = True, cfg = "host", mandatory = True),
-            "out": attr.output(mandatory = True),
-        },
+    implementation = _checksum_database,
+    attrs = {
+        "info_tool": attr.label(executable = True, cfg = "host", mandatory = True),
+        "out": attr.output(mandatory = True),
+    },
 )
 
 def _migrated_database_impl(ctx):
@@ -110,6 +121,12 @@ def _migrated_database_impl(ctx):
     if ctx.attr.checksum != None:
         inputs = [ctx.file.checksum]
 
+    my_runfiles = ctx.runfiles(files = [out_checksum])
+    my_runfiles = my_runfiles.merge(ctx.attr.migrate_tool[DefaultInfo].default_runfiles)
+    my_runfiles = my_runfiles.merge(ctx.attr.info_tool[DefaultInfo].default_runfiles)
+
+    migrate_relative_tool_path = ctx.executable.migrate_tool.short_path
+    info_relative_tool_path = ctx.executable.info_tool.short_path
 
     ctx.actions.run_shell(
         arguments = [],
@@ -119,17 +136,26 @@ def _migrated_database_impl(ctx):
         progress_message = "Info {}".format(ctx.attr.info_tool[DatabaseInfo].dbname),
         tools = [ctx.executable.info_tool, ctx.executable.migrate_tool],
         use_default_shell_env = True,
-        command = "{migrate} && {info} > {out}".format(
-            migrate = ctx.executable.migrate_tool.short_path,
-            info = ctx.executable.info_tool.short_path,
+        command = """#!/bin/bash
+
+set -ex
+export RUNFILES_DIR=`pwd`/{migrate_path}.runfiles/{workspace}
+${{RUNFILES_DIR}}/{migrate}
+echo "hello" > {out}""".format(
+    migrate_path = ctx.executable.migrate_tool.path,
+            migrate = migrate_relative_tool_path,
+            info = info_relative_tool_path,
             out = out_checksum.path,
+            workspace = ctx.workspace_name,
         ),
     )
+
+
 
     return struct(providers = [
         ctx.attr.migrate_tool[DataSourceConnectionInfo],
         ctx.attr.migrate_tool[DatabaseInfo],
-        DefaultInfo(files = depset([out_checksum]), runfiles = ctx.runfiles(files = [out_checksum])),
+        DefaultInfo(files = depset([out_checksum]), runfiles = my_runfiles),
     ])
 
 _migrated_database = rule(
@@ -137,7 +163,7 @@ _migrated_database = rule(
     attrs = {
         "migrate_tool": attr.label(executable = True, cfg = "host", mandatory = True, providers = [DatabaseInfo, DataSourceConnectionInfo]),
         "info_tool": attr.label(executable = True, cfg = "host", mandatory = True, providers = [DatabaseInfo, DataSourceConnectionInfo]),
-        "checksum": attr.label(allow_single_file = True, default=None, doc = """
+        "checksum": attr.label(allow_single_file = True, default = None, doc = """
         Checksum value of database to trigger a rebuild. Helpful if someone might manually run migrations
         outside of bazel.
         """),
@@ -194,7 +220,7 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
     checksum_database(
         name = "checksum_{}".format(name),
         info_tool = ":info_{}".format(name),
-        out = "checksum_{}.sha".format(name)
+        out = "checksum_{}.sha".format(name),
     )
 
     _migrated_database(
@@ -202,7 +228,7 @@ def migrated_database(name, datasource_configuration, migrations, dbname = None,
         migrate_tool = ":migrate_{}".format(name),
         info_tool = ":info_{}".format(name),
         checksum = ":checksum_{}".format(name),
-        **kwargs,
+        **kwargs
     )
 
 # Users can rely on @<name>//:checksum for migrated status
@@ -242,8 +268,7 @@ alias(name = "checksum", actual=":checksum_{NAME}", visibility=["//visibility:pu
             USERNAME = ctx.attr.datasource_configuration,
             MIGRATIONS = "",
             DATASOURCE_CONFIGURATION = ctx.attr.datasource_configuration,
-         ),
-
+        ),
         executable = False,
     )
 
@@ -252,7 +277,7 @@ local_database = repository_rule(
     local = True,
     attrs = {
         "datasource_configuration": attr.label(providers = [DataSourceConnectionInfo]),
-        "dbname":  attr.string(doc = """
+        "dbname": attr.string(doc = """
         If omitted, will be the name of the repository.
         """),
         "migrations": attr.label_list(allow_files = True),
