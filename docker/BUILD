@@ -36,7 +36,7 @@ container_push(
     format = "Docker",
     image = ":pkg_image.tar",
     registry = "index.docker.io",
-    repository = "daicoden/bazel-jooq/build",
+    repository = "daicoden/bazel-jooq-build",
     tag = "latest",
     tags = ["manual"],
 )
