@@ -1,6 +1,9 @@
 FROM cimg/base:2020.05
 
 RUN \
-  apt-get update && \
-  apt-get install -y openjdk-8-jdk python python3 python-dev python-pip python3-pip && \
-  rm -rf /var/lib/apt/lists/*
+  sudo apt-get update && \
+  sudo apt-get install -y openjdk-8-jdk software-properties-common && \
+  sudo add-apt-repository ppa:deadsnakes/ppa && \
+  sudo apt update && \
+  sudo apt install python3.7 && \
+  sudo rm -rf /var/lib/apt/lists/*

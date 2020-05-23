@@ -12,6 +12,7 @@ download_pkgs(
         "python-pip",
         "python3",
         "python3-pip",
+        "python3-venv",
     ],
     tags = ["manual"],
 )
@@ -33,6 +34,16 @@ install_pkgs(
 
 container_push(
     name = "push_bazel_jooq_build",
+    format = "Docker",
+    image = ":pkg_image.tar",
+    registry = "index.docker.io",
+    repository = "daicoden/bazel-jooq-build",
+    tag = "latest",
+    tags = ["manual"],
+)
+
+container_push(
+    name = "push_bazel_jooq_build_2",
     format = "Docker",
     image = ":pkg_image.tar",
     registry = "index.docker.io",

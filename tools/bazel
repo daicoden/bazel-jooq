@@ -7,7 +7,7 @@ if [[ -z "$CUSTOM_PYTHON" ]]; then
                     exit 1
             fi
             echo 'Creating virtualenv python3'
-            python3 -m venv python3
+            python3.7 -m venv python3
     fi
 
     source python3/bin/activate
