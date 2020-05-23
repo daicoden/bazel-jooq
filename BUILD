@@ -3,7 +3,7 @@ package(default_visibility = ["//:__subpackages__"])
 exports_files([
     "iml_types.xml",
     ".bazelexec.stamp",
-    "maven_install.json"
+    "maven_install.json",
 ])
 
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")

@@ -202,3 +202,44 @@ http_archive(
     strip_prefix = "buildtools-master",
     url = "https://github.com/bazelbuild/buildtools/archive/master.zip",
 )
+
+# Docker for Build
+
+# Download the rules_docker repository at release v0.14.1
+http_archive(
+    name = "io_bazel_rules_docker",
+    sha256 = "a557409ece932a07a80f8fcfe09b3b502f39f6272ad3526657cbb6ed36ec4990",
+    strip_prefix = "rules_docker-4dedeca5e17d73d708f5f5acb01551c67ba4fcbb",
+    urls = ["https://github.com/bazelbuild/rules_docker/archive/4dedeca5e17d73d708f5f5acb01551c67ba4fcbb.zip"],
+)
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
+container_deps()
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_pull",
+)
+
+container_pull(
+    name = "circleci_base",
+    digest = "sha256:795f9f76eaa1ebb1e4def7229ebadb6ed448c13b967eea4cd6c274c557606eec",
+    registry = "index.docker.io",
+    repository = "cimg/base",
+    tag = "2020.05",
+)
+
+container_pull(
+    name = "ubuntu1604",
+    registry = "l.gcr.io",
+    repository = "google/ubuntu1604",
+    tag = "latest",
+)
