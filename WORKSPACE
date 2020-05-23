@@ -104,6 +104,7 @@ local_database(
     datasource_configuration = "@E04_mysql",
     dbname = "04_mysql_flyway_migration_workspace",
     migrations = ["@E04_mysql_flyway_migration_workspace//:migrations"],
+    recalculate_when = ["//:.bazelexec.stamp"],
 )
 
 ### Flyway

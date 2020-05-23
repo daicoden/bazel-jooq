@@ -258,36 +258,41 @@ def _local_database(ctx):
     if dbname == None:
         dbname = ctx.name
 
-    migrations = ",\n".join(["'@{}//{}:{}'".format(label.workspace_name, label.package, label.name) for label in ctx.attr.migrations])
+    # If you don't do something with the file, then the rule does not recalculate.
+    args = [ctx.path(file) for file in ctx.attr.recalculate_when]
 
     # Total mysql hack for now... not sure what to do... need java tool which dumps content of a table
-    result = ctx.execute(["mysql", "-u", "root", "--protocol", "tcp", "-e", "select * from 04_mysql_flyway_migration_workspace.flyway_schema_history"])
+    result = ctx.execute(
+        ["mysql", "-u", "root", "--protocol", "tcp", "-e", "show databases"],
+    )
 
     ctx.file(
-        "local_checksum",
+        "local_database_checksum",
         """
-             {RETURN_CODE}
-             {STDERR}
-             {STDOUT}
-             """.format(
+{RETURN_CODE}
+{STDERR}
+{STDOUT}
+ """.format(
             RETURN_CODE = result.return_code,
             STDERR = result.stderr,
             STDOUT = result.stdout,
         ),
     )
 
+    migrations = ",\n".join(["'@{}//{}:{}'".format(label.workspace_name, label.package, label.name) for label in ctx.attr.migrations])
+
     ctx.file(
         "BUILD",
         """
 load("@gpk_rules_datasource//flyway:defs.bzl", "migrated_database")
-exports_files(["local_checksum"])
+exports_files(["local_database_checksum"])
 
 migrated_database(
     name="{NAME}",
     dbname="{DBNAME}",
     datasource_configuration="{DATASOURCE_CONFIGURATION}",
     migrations=[{MIGRATIONS}],
-    checksum = "local_checksum",
+    checksum = "local_database_checksum",
     visibility=["//visibility:public"],
 )
 
@@ -309,12 +314,19 @@ alias(name = "checksum", actual=":checksum_{NAME}", visibility=["//visibility:pu
 local_database = repository_rule(
     implementation = _local_database,
     local = True,
-    configure=True,
+    configure = True,
     attrs = {
         "datasource_configuration": attr.label(providers = [DataSourceConnectionInfo]),
         "dbname": attr.string(doc = """
         If omitted, will be the name of the repository.
         """),
         "migrations": attr.label_list(allow_files = True),
+        "recalculate_when": attr.label_list(allow_files = True, doc = """
+        Files to watch which will trigger the repository to run when they change.
+
+        You can add a tools/bazel script to your local repository, and write a file with a date
+        every time bazel is executed in order to get the migrator to check each bazel run if
+        someone changed the database.
+        """),
     },
 )
