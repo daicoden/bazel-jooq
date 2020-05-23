@@ -13,7 +13,7 @@ def _flyway_tool_impl(ctx):
     outfile = ctx.actions.declare_file("%s_exe" % ctx.label.name)
 
     # Ugh, the locations HAVE to be directories, so create a depset of all the directories passed in.
-    locations = depset(["filesystem:{}".format("/".join(migration.short_path.split("/")[0:-1])) for migration in ctx.files.migrations])
+    locations = depset(["/".join(migration.short_path.split("/")[0:-1]) for migration in ctx.files.migrations])
 
     jars = [jar.class_jar for jar in jdbc_java_lib[JavaInfo].outputs.jars]
 
@@ -22,8 +22,10 @@ def _flyway_tool_impl(ctx):
 
     # https://docs.bazel.build/versions/master/skylark/rules.html
     # https://github.com/bazelbuild/examples/blob/7357eb42c2b87a283effbfff6024b442feb5704b/rules/runfiles/complex_tool.bzl
-    command = """
-echo ${{RUNFILES_DIR}}
+
+    command = """#!/bin/bash
+
+set -e
 
 if [[ -z "${{RUNFILES_DIR}}" ]]; then
   RUNFILES_DIR=${{0}}.runfiles/{WORKSPACE}
@@ -31,26 +33,24 @@ else
   RUNFILES_DIR=${{RUNFILES_DIR}}/{WORKSPACE}
 fi
 
-locs={LOCATIONS}
+declare -a StringArray=({LOCATIONS})
 runfile_locs=""
-for i in ${{locs//,/ }}
+for i in ${{StringArray[@]}}
 do
+    echo "Looking at ${{i}}"
     if [[ -z "${{runfile_locs}}" ]]; then
-        runfile_locs="${{RUNFILES_DIR}}/$i"
+        runfile_locs="filesystem:${{RUNFILES_DIR}}/$i"
     else
-        runfile_locs="${{runfile_locs}},${{RUNFILES_DIR}}/$i"
+        runfile_locs="filesystem:${{runfile_locs}},${{RUNFILES_DIR}}/$i"
     fi
 done
-
-runfile_locs="${{runfile_locs:1}}"
-
 
 ${{RUNFILES_DIR}}/{FLYWAY} \
 -url={JDBC_CONNECTION_STRING} \
 -user={USERNAME} \
 -password={PASSWORD} \
 -schemas={DBNAME} \
--locations={LOCATIONS} \
+-locations=${{runfile_locs}} \
 -jarDirs=${{RUNFILES_DIR}}/{JAR_DIRS} \
 -workingDirectory=${{RUNFILES_DIR}}/ \
 -table={TABLE} \
@@ -62,7 +62,7 @@ ${{RUNFILES_DIR}}/{FLYWAY} \
         PASSWORD = datasource_configuration.password,
         DBNAME = database_configuration.dbname,
         JDBC_CONNECTION_STRING = datasource_configuration.jdbc_connection_string,
-        LOCATIONS = ",".join(locations.to_list()),
+        LOCATIONS = " ".join(['"{}"'.format(location) for location in locations.to_list()]),
         JAR_DIRS = ",".join(["/".join(jar.short_path.split("/")[0:-1]) for jar in jars.to_list()]),
         TABLE = ctx.attr.table,
         COMMAND = ctx.attr.command,
@@ -157,7 +157,7 @@ def _migrated_database_impl(ctx):
         use_default_shell_env = True,
         command = """#!/bin/bash
 
-set -ex
+set -e
 export RUNFILES_DIR=`pwd`/{migrate_path}.runfiles
 ${{RUNFILES_DIR}}/{workspace}/{migrate}
 echo "hello" > {out}""".format(
@@ -321,6 +321,9 @@ local_database = repository_rule(
         If omitted, will be the name of the repository.
         """),
         "migrations": attr.label_list(allow_files = True),
+        # TODO: add optional executable for generating the checksum file
+        # https://community.denodo.com/kb/view/document/Testing%20JDBC%20connections?tag=Connectivity
+        # This can dump all the tables or whatever to trigger downstreams to re-build
         "recalculate_when": attr.label_list(allow_files = True, doc = """
         Files to watch which will trigger the repository to run when they change.
 
