@@ -20,9 +20,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v3-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v3-lint-bazel-out-{{ .Branch }}-
-            - v3-lint-bazel-out-
+            - v4-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v4-lint-bazel-out-{{ .Branch }}-
+            - v4-lint-bazel-out-
 
       - run:
           name: Lint
@@ -30,7 +30,7 @@ jobs:
             ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
 
       - save_cache:
-          key: v3-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+          key: v4-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
           paths:
             - ~/bazel-cache/
 
@@ -46,9 +46,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v3-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v3-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
-            - v3-<< parameters.working_dir >>-bazel-out-
+            - v4-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v4-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
+            - v4-<< parameters.working_dir >>-bazel-out-
 
       - run:
           name: Create Test Results Directory
@@ -68,7 +68,7 @@ jobs:
             ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" test --local_resources=2048,2,1.0 --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
 
       - save_cache:
-          key: v3-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+          key: v4-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
           paths:
             - ~/bazel-cache/
             - ~/bazel-testlogs
