@@ -27,7 +27,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
+            ./lint.sh --output_base=$HOME/bazel-cache
 
       - save_cache:
           key: v5--lint-bazel-out-{{ .Branch }}-{{ .Revision }}
