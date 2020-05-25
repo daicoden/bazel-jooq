@@ -27,7 +27,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m"
+            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
 
       - save_cache:
           key: v5--lint-bazel-out-{{ .Branch }}-{{ .Revision }}
@@ -65,8 +65,8 @@ jobs:
           name: Bazel Tests
           command: |
             cd << parameters.working_dir >>
-            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" build --local_ram_resources=2048 --local_cpu_resources=2 //...
-            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" test --local_ram_resources=2048 --local_cpu_resources=2 --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
+            ./bazelisk --output_base=$HOME/bazel-cache build //...
+            ./bazelisk --output_base=$HOME/bazel-cache test --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
 
       - save_cache:
           key: v5--<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
