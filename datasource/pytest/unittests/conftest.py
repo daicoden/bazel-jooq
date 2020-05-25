@@ -6,12 +6,14 @@ from copypastel_rules_datasource.db_tool import DbTool
 
 @fixture
 def mysql_connection():
-    return mysql.connector.connect(
+    connection = mysql.connector.connect(
             host="localhost",
             port=3306,
             user="root",
             passwd="",
     )
+    yield connection
+    connection.close()
 
 
 @fixture
