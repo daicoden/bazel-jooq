@@ -229,17 +229,17 @@ load(
     "container_pull",
 )
 
-container_pull(
-    name = "circleci_base",
-    digest = "sha256:795f9f76eaa1ebb1e4def7229ebadb6ed448c13b967eea4cd6c274c557606eec",
-    registry = "index.docker.io",
-    repository = "cimg/base",
-    tag = "2020.05",
-)
+load("@io_bazel_rules_docker//contrib:dockerfile_build.bzl", "dockerfile_image")
 
 container_pull(
-    name = "ubuntu1604",
-    registry = "l.gcr.io",
-    repository = "google/ubuntu1604",
-    tag = "latest",
+    name = "circle_python",
+    digest = "sha256:795f9f76eaa1ebb1e4def7229ebadb6ed448c13b967eea4cd6c274c557606eec",
+    registry = "index.docker.io",
+    repository = "circleci/python",
+    tag = "3.7.7",
+)
+
+dockerfile_image(
+    name = "build_docker_file",
+    dockerfile = "//docker:Dockerfile",
 )
