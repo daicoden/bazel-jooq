@@ -50,3 +50,36 @@ http_archive(
     strip_prefix = "rules_intellij_generate-%s/rules" % rules_intellij_generate_sha,
     url = "https://github.com/sconover/rules_intellij_generate/archive/%s.tar.gz" % rules_intellij_generate_sha,
 )
+
+### Flyway
+RULES_JVM_EXTERNAL_TAG = "3.2"
+
+RULES_JVM_EXTERNAL_SHA = "82262ff4223c5fda6fb7ff8bd63db8131b51b413d26eb49e3131037e79e324af"
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+)
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@rules_jvm_external//:specs.bzl", "maven")
+
+# to update the json file, see https://github.com/bazelbuild/rules_jvm_external#updating-maven_installjson
+maven_install(
+    name = "maven",
+    artifacts = [
+        "org.flywaydb:flyway-commandline:6.4.2",
+        "mysql:mysql-connector-java:8.0.20",
+    ],
+    maven_install_json = "@gpk_rules_datasource//:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+    version_conflict_policy = "pinned",
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()

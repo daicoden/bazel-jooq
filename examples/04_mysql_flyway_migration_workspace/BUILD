@@ -5,6 +5,8 @@ load(
 )
 load("@gpk_rules_pytest//:defs.bzl", "pytest_test")
 
+exports_files([".bazelexec.stamp"])
+
 datasource_configuration_json(
     name = "mysql_config",
     out = "mysql_config.json",
