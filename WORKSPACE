@@ -228,7 +228,6 @@ load(
     "@io_bazel_rules_docker//container:container.bzl",
     "container_pull",
 )
-
 load("@io_bazel_rules_docker//contrib:dockerfile_build.bzl", "dockerfile_image")
 
 container_pull(

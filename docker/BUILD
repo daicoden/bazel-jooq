@@ -5,7 +5,7 @@ load("@io_bazel_rules_docker//docker/package_managers:install_pkgs.bzl", "instal
 container_image(
     name = "build_docker_image",
     base = "@build_docker_file//image:dockerfile_image.tar",
-    tags = ["manual"]
+    tags = ["manual"],
 )
 
 container_push(
