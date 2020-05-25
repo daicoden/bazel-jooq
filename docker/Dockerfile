@@ -1,6 +1,5 @@
-FROM cimg/python:3.7.5
+FROM cimg/python:3.7.7
 
 RUN \
-  apt-get update && \
-  apt-get install -y openjdk-8-jdk software-properties-common && \
-  rm -rf /var/lib/apt/lists/*
+  sudo apt-get update && \
+  sudo apt-get install -y openjdk-8-jdk software-properties-common
