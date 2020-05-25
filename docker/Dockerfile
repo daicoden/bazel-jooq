@@ -1,4 +1,4 @@
-FROM circleci/python:3.7.7
+FROM cimg/python:3.7.7
 
 
 RUN \
