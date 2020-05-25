@@ -1,7 +1,6 @@
 import json
-import os
-
 import mysql.connector
+import os
 from pytest import fixture
 
 
@@ -28,26 +27,37 @@ def home_dir():
 
 
 @fixture
-def database_config(home_dir):
+def database_config_raw(home_dir):
     with open(home_dir + '/mysql_config.json', 'r') as f:
-        yield json.loads(f.read())
+        yield f.read()
 
 
 @fixture
-def database_creator_config_file_executable(home_dir):
-    return home_dir + '/create_02_mysql_database_config_json_exe'
+def database_config(database_config_raw):
+    return json.loads(database_config_raw)
 
 
 @fixture
-def database_dropper_config_file_executable(home_dir):
-    return home_dir + '/drop_02_mysql_database_config_json_exe'
+def database_creator_executable(home_dir):
+    return home_dir + '/E04db/create'
 
 
 @fixture
-def database_creator_no_config_file_executable(home_dir):
-    return home_dir + '/create_02_mysql_database_no_config_json_exe'
+def database_dropper_executable(home_dir):
+    return home_dir + '/E04db/drop'
 
 
 @fixture
-def database_dropper_no_config_file_executable(home_dir):
-    return home_dir + '/drop_02_mysql_database_no_config_json_exe'
+def database_migrator_executable(home_dir):
+    return home_dir + '/E04db/migrate'
+
+
+@fixture
+def database_checksum_executable(home_dir):
+    return home_dir + '/E04db/checksum'
+
+
+@fixture
+def database_checksum_from_build(home_dir):
+    return home_dir + '/E04db_migration_checksum'
+

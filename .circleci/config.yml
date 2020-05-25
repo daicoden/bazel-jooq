@@ -3,7 +3,7 @@ version: 2.1
 executors:
   python-bazel:
     docker:
-      - image: circleci/python:3.7.7
+      - image: daicoden/bazel-jooq-build:force
       - image: circleci/mariadb:10.4.8
         environment:
           ALLOW_EMPTY_PASSWORD=yes
@@ -13,24 +13,26 @@ jobs:
   lint:
     docker:
       - image: circleci/python:3.7.7
+    # If you need to re-build lint, update cache key, change resource_class to large, save cache, then change back to small
     resource_class: small
+
 
     steps:
       - checkout
 
       - restore_cache:
           keys:
-            - v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v2-lint-bazel-out-{{ .Branch }}-
-            - v2-lint-bazel-out-
+            - v5--lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v5--lint-bazel-out-{{ .Branch }}-
+            - v5--lint-bazel-out-
 
       - run:
           name: Lint
           command: |
-            ./lint.sh --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx1024m"
+            ./lint.sh --output_base=$HOME/bazel-cache
 
       - save_cache:
-          key: v2-lint-bazel-out-{{ .Branch }}-{{ .Revision }}
+          key: v5--lint-bazel-out-{{ .Branch }}-{{ .Revision }}
           paths:
             - ~/bazel-cache/
 
@@ -40,15 +42,16 @@ jobs:
       working_dir:
         type: string
         default: '.'
+    resource_class: medium
 
     steps:
       - checkout
 
       - restore_cache:
           keys:
-            - v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
-            - v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
-            - v2-<< parameters.working_dir >>-bazel-out-
+            - v5--<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+            - v5--<< parameters.working_dir >>-bazel-out-{{ .Branch }}-
+            - v5--<< parameters.working_dir >>-bazel-out-
 
       - run:
           name: Create Test Results Directory
@@ -64,11 +67,11 @@ jobs:
           name: Bazel Tests
           command: |
             cd << parameters.working_dir >>
-            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" build --local_resources=2048,2,1.0 //...
-            ./bazelisk --output_base=$HOME/bazel-cache --host_jvm_args="-Xmx512m" test --local_resources=2048,2,1.0 --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
+            ./bazelisk --output_base=$HOME/bazel-cache build //...
+            ./bazelisk --output_base=$HOME/bazel-cache test --test_output=errors  //... --action_env='JUNIT_XML_ROOT_DIR=~/bazel-testlogs/<< parameters.working_dir >>'
 
       - save_cache:
-          key: v2-<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
+          key: v5--<< parameters.working_dir >>-bazel-out-{{ .Branch }}-{{ .Revision }}
           paths:
             - ~/bazel-cache/
             - ~/bazel-testlogs
@@ -92,4 +95,6 @@ workflows:
                 - "."
                 - "./examples/01_mysql_database"
                 - "./examples/02_mysql_database_config_json"
+                - "./examples/03_mysql_flyway_migration"
+                - "./examples/04_mysql_flyway_migration_workspace"
       - lint

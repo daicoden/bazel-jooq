@@ -1,27 +1,16 @@
-exports_files(["database.json"])
-
 load("@gpk_rules_datasource//datasource:defs.bzl", "database", "datasource_configuration", "datasource_configuration_json")
-
-database(
-    name = "02_mysql_database_config_json",
-    datasource_configuration = "@E02_datasources//:mysql",
-)
-
-database(
-    name = "02_mysql_database_no_config_json",
-    datasource_configuration = "@E02_datasources_default//:mysql",
-)
-
 load(
     "@pip//:requirements.bzl",
     pip_require = "requirement",
 )
 load("@gpk_rules_pytest//:defs.bzl", "pytest_test")
 
+exports_files([".bazelexec.stamp"])
+
 datasource_configuration_json(
     name = "mysql_config",
     out = "mysql_config.json",
-    datasource_configuration = "@E02_datasources//:mysql",
+    datasource_configuration = "@E04_mysql",
 )
 
 pytest_test(
@@ -29,10 +18,12 @@ pytest_test(
     srcs = glob(["acceptancetests/*.py"]),
     data = [
         "mysql_config.json",
-        ":create_02_mysql_database_config_json",
-        ":create_02_mysql_database_no_config_json",
-        ":drop_02_mysql_database_config_json",
-        ":drop_02_mysql_database_no_config_json",
+        "@E04db//:create",
+        "@E04db//:drop",
+        "@E04db//:migrate",
+        "@E04db//:checksum",
+        # Causes database to be migrated on start
+        "@E04db",
     ],
     deps = [
         pip_require("pytest"),
@@ -40,6 +31,12 @@ pytest_test(
         # https://bugs.mysql.com/bug.php?id=98225
         pip_require("dnspython"),
     ],
+)
+
+filegroup(
+    name = "migrations",
+    srcs = glob(["migrations/*.sql"]),
+    visibility = ["//visibility:public"],
 )
 
 test_suite(
