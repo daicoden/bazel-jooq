@@ -13,7 +13,9 @@ jobs:
   lint:
     docker:
       - image: circleci/python:3.7.7
-    resource_class: medium
+    # If you need to re-build lint, update cache key, change resource_class to large, save cache, then change back to small
+    resource_class: large
+
 
     steps:
       - checkout
