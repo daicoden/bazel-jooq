@@ -3,7 +3,7 @@ version: 2.1
 executors:
   python-bazel:
     docker:
-      - image: daicoden/bazel-jooq-build:latest
+      - image: daicoden/bazel-jooq-build:force
       - image: circleci/mariadb:10.4.8
         environment:
           ALLOW_EMPTY_PASSWORD=yes
