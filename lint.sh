@@ -2,7 +2,7 @@
 
 # These lint tests need to be run manually to get access to bazel.
 
-tools/bazel $* run //lint:buildifier
+tools/bazel $* run --local_ram_resources=2048 --local_cpu_resources=2 //lint:buildifier
 
 res=$?
 

@@ -1,3 +1,4 @@
 bazel-*
 python3/
 .bazelexec.stamp
+.idea
