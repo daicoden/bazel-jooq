@@ -11,7 +11,7 @@ def pytest_test(name, srcs = [], deps = [], data = []):
     # in external, but the PWD is set to the root above external. This was causing tests to
     # run in other python packages.  For external repository tests, we need to change PWD
     # to be scoped to the repository bazel is running the test for.
-    if native.repository_name == "":
+    if native.repository_name() == "@":
         namespace_dir = ""
     else:
         # Remove the @ form the repository_name
