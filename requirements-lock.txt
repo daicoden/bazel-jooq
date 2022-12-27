@@ -6,4 +6,4 @@ py==1.10.0
 pytest==3.2.1
 PyYAML==5.4
 six==1.16.0
-setuptools==57.0.0
+setuptools==65.5.1
